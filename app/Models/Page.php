@@ -22,6 +22,21 @@ class Page extends Model
         });
     }
 
+    public static function sanitizeContent(?string $content): ?string
+    {
+        if ($content === null) {
+            return null;
+        }
+
+        $allowedTags = 'p,br,strong,b,em,i,u,a[href|target|rel],img[src|alt|width|height],h1,h2,h3,h4,h5,h6,ul,ol,li,table,thead,tbody,tr,th,td,blockquote,pre,code,hr,div,span';
+
+        $content = strip_tags($content, '<' . str_replace(',', '><', $allowedTags) . '>');
+
+        $content = preg_replace('/\bon\w+\s*=/i', 'data-blocked=', $content);
+
+        return $content;
+    }
+
     public function scopePublished($query)
     {
         return $query->where('is_published', true);

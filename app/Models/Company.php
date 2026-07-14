@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Client;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -47,5 +48,41 @@ class Company extends Model
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    public function canAddUser(): bool
+    {
+        $package = $this->package();
+        if (!$package) return false;
+        return $this->users()->count() < $package->max_users;
+    }
+
+    public function canAddClient(): bool
+    {
+        $package = $this->package();
+        if (!$package) return false;
+        return Client::where('user_id', $this->users()->pluck('id'))->count() < $package->max_clients;
+    }
+
+    public function canAddQuotation(): bool
+    {
+        $package = $this->package();
+        if (!$package) return false;
+        return Quotation::where('user_id', $this->users()->pluck('id'))->count() < $package->max_quotations;
+    }
+
+    public function userCount(): int
+    {
+        return $this->users()->count();
+    }
+
+    public function clientCount(): int
+    {
+        return Client::where('user_id', $this->users()->pluck('id'))->count();
+    }
+
+    public function quotationCount(): int
+    {
+        return Quotation::where('user_id', $this->users()->pluck('id'))->count();
     }
 }

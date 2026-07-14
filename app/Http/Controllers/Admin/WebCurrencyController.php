@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Currency;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,7 @@ class WebCurrencyController extends Controller
         }
 
         Currency::create($validated);
+        ActivityLog::log('created', Currency::latest()->first(), 'Created currency ' . $validated['code']);
 
         return redirect('/admin/currencies')->with('success', 'Currency created.');
     }
@@ -59,6 +61,7 @@ class WebCurrencyController extends Controller
         }
 
         $currency->update($validated);
+        ActivityLog::log('updated', $currency, 'Updated currency ' . $currency->code);
 
         return redirect('/admin/currencies')->with('success', 'Currency updated.');
     }
@@ -70,6 +73,7 @@ class WebCurrencyController extends Controller
         }
 
         $currency->delete();
+        ActivityLog::log('deleted', $currency, 'Deleted currency ' . $currency->code);
         return redirect('/admin/currencies')->with('success', 'Currency deleted.');
     }
 }

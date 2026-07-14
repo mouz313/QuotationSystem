@@ -25,6 +25,11 @@ class WebClientController extends Controller
 
     public function store(Request $request)
     {
+        $company = auth()->user()->company;
+        if ($company && !$company->canAddClient()) {
+            return back()->with('error', 'You have reached your client limit. Please upgrade your package.');
+        }
+
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
             'email'   => 'required|email',

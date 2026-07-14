@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 
@@ -53,6 +54,7 @@ class WebEmailTemplateController extends Controller
         $validated['is_enabled'] = $request->boolean('is_enabled') ? '1' : '0';
 
         Setting::setGroup('email_template_' . $template, $validated);
+        ActivityLog::log('updated', null, 'Updated email template ' . $template);
 
         return redirect('/admin/email-templates')->with('success', 'Template updated.');
     }

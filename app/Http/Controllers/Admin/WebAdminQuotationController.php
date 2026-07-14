@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Quotation;
 use Illuminate\Http\Request;
 
@@ -42,5 +43,36 @@ class WebAdminQuotationController extends Controller
     {
         $quotation->load(['client', 'items', 'currency', 'tax', 'user.company']);
         return view('admin.quotations.show', compact('quotation'));
+    }
+
+    public function updateStatus(Request $request, Quotation $quotation)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:draft,sent,accepted,declined',
+        ]);
+
+        $quotation->update(['status' => $validated['status']]);
+        ActivityLog::log('status_changed', $quotation, 'Changed status of ' . $quotation->quote_number . ' to ' . $validated['status']);
+
+        event(new \App\Events\QuotationStatusChanged($quotation));
+
+        return back()->with('success', 'Quotation status updated to ' . $validated['status'] . '.');
+    }
+
+    public function destroy(Quotation $quotation)
+    {
+        $quoteNumber = $quotation->quote_number;
+        $quotation->delete();
+        ActivityLog::log('deleted', null, 'Deleted quotation ' . $quoteNumber);
+
+        return redirect('/admin/quotations')->with('success', 'Quotation deleted.');
+    }
+
+    public function pdf(Quotation $quotation)
+    {
+        $quotation->load(['client', 'items', 'currency', 'tax', 'user.company']);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.quotations.pdf', compact('quotation'));
+        $pdf->setOption('isRemoteEnabled', true);
+        return $pdf->download($quotation->quote_number . '.pdf');
     }
 }

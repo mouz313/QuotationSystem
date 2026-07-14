@@ -29,6 +29,11 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $company = auth()->user()->company;
+        if ($company && !$company->canAddUser()) {
+            return back()->with('error', 'You have reached your user limit. Please upgrade your package.');
+        }
+
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',

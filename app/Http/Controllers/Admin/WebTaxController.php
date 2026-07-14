@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Tax;
 use Illuminate\Http\Request;
 
@@ -34,6 +35,7 @@ class WebTaxController extends Controller
         }
 
         Tax::create($validated);
+        ActivityLog::log('created', Tax::latest()->first(), 'Created tax ' . $validated['name']);
 
         return redirect('/admin/taxes')->with('success', 'Tax created.');
     }
@@ -57,6 +59,7 @@ class WebTaxController extends Controller
         }
 
         $tax->update($validated);
+        ActivityLog::log('updated', $tax, 'Updated tax ' . $tax->name);
 
         return redirect('/admin/taxes')->with('success', 'Tax updated.');
     }
@@ -68,6 +71,7 @@ class WebTaxController extends Controller
         }
 
         $tax->delete();
+        ActivityLog::log('deleted', $tax, 'Deleted tax ' . $tax->name);
         return redirect('/admin/taxes')->with('success', 'Tax deleted.');
     }
 }

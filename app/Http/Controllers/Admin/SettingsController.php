@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -49,6 +50,7 @@ class SettingsController extends Controller
         }
 
         Setting::setGroup('general', $validated);
+        ActivityLog::log('updated', null, 'Updated general settings');
 
         return redirect('/admin/settings?tab=general')->with('success', 'General settings updated.');
     }
@@ -65,6 +67,7 @@ class SettingsController extends Controller
         ]);
 
         Setting::setGroup('social', $validated);
+        ActivityLog::log('updated', null, 'Updated social media settings');
 
         return redirect('/admin/settings?tab=social')->with('success', 'Social media links updated.');
     }
@@ -82,6 +85,7 @@ class SettingsController extends Controller
         $validated['pusher_enabled'] = $request->boolean('pusher_enabled') ? '1' : '0';
 
         Setting::setGroup('pusher', $validated);
+        ActivityLog::log('updated', null, 'Updated Pusher settings');
 
         return redirect('/admin/settings?tab=pusher')->with('success', 'Pusher settings updated.');
     }
@@ -100,6 +104,7 @@ class SettingsController extends Controller
         ]);
 
         Setting::setGroup('email', $validated);
+        ActivityLog::log('updated', null, 'Updated email settings');
 
         return redirect('/admin/settings?tab=email')->with('success', 'Email settings updated.');
     }

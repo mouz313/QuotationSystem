@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Package;
 use Illuminate\Http\Request;
 
@@ -32,6 +33,8 @@ class WebPackageController extends Controller
         ]);
 
         Package::create($validated);
+        $package = Package::latest()->first();
+        ActivityLog::log('created', $package, 'Created package ' . $package->name);
 
         return redirect('/admin/packages')->with('success', 'Package created.');
     }
@@ -55,6 +58,7 @@ class WebPackageController extends Controller
         ]);
 
         $package->update($validated);
+        ActivityLog::log('updated', $package, 'Updated package ' . $package->name);
 
         return redirect('/admin/packages')->with('success', 'Package updated.');
     }
@@ -66,6 +70,7 @@ class WebPackageController extends Controller
         }
 
         $package->delete();
+        ActivityLog::log('deleted', $package, 'Deleted package ' . $package->name);
         return redirect('/admin/packages')->with('success', 'Package deleted.');
     }
 }

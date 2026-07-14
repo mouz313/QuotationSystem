@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -34,9 +35,11 @@ class WebPageController extends Controller
             $validated['slug'] = Str::slug($validated['title']);
         }
 
+        $validated['content'] = Page::sanitizeContent($validated['content'] ?? null);
         $validated['is_published'] = $request->boolean('is_published');
 
         Page::create($validated);
+        ActivityLog::log('created', Page::latest()->first(), 'Created page ' . $validated['title']);
 
         return redirect('/admin/pages')->with('success', 'Page created.');
     }
@@ -56,9 +59,11 @@ class WebPageController extends Controller
             'is_published'     => 'sometimes|boolean',
         ]);
 
+        $validated['content'] = Page::sanitizeContent($validated['content'] ?? null);
         $validated['is_published'] = $request->boolean('is_published');
 
         $page->update($validated);
+        ActivityLog::log('updated', $page, 'Updated page ' . $page->title);
 
         return redirect('/admin/pages')->with('success', 'Page updated.');
     }
@@ -66,6 +71,7 @@ class WebPageController extends Controller
     public function destroy(Page $page)
     {
         $page->delete();
+        ActivityLog::log('deleted', $page, 'Deleted page ' . $page->title);
         return redirect('/admin/pages')->with('success', 'Page deleted.');
     }
 }

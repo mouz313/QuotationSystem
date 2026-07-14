@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -125,6 +126,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        ActivityLog::log('login', null, $user->name . ' logged in');
 
         $redirect = $user->isSuperAdmin() ? '/admin/dashboard' : '/dashboard';
         return redirect()->intended($redirect);

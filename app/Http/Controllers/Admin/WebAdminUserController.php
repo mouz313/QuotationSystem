@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdminRole;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -37,6 +38,7 @@ class WebAdminUserController extends Controller
         $validated['password'] = Hash::make($validated['password']);
 
         User::create($validated);
+        ActivityLog::log('created', User::latest()->first(), 'Created admin user ' . $validated['name']);
 
         return redirect('/admin/users')->with('success', 'Admin user created.');
     }
@@ -63,6 +65,7 @@ class WebAdminUserController extends Controller
         }
 
         $user->update($validated);
+        ActivityLog::log('updated', $user, 'Updated admin user ' . $user->name);
 
         return redirect('/admin/users')->with('success', 'Admin user updated.');
     }
@@ -74,6 +77,7 @@ class WebAdminUserController extends Controller
         }
 
         $user->delete();
+        ActivityLog::log('deleted', $user, 'Deleted admin user ' . $user->name);
         return redirect('/admin/users')->with('success', 'Admin user deleted.');
     }
 }

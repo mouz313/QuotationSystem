@@ -33,6 +33,11 @@ class WebQuotationController extends Controller
 
     public function store(Request $request)
     {
+        $company = auth()->user()->company;
+        if ($company && !$company->canAddQuotation()) {
+            return back()->with('error', 'You have reached your quotation limit. Please upgrade your package.');
+        }
+
         $validated = $request->validate([
             'client_id'         => 'required|exists:clients,id',
             'currency_id'       => 'required|exists:currencies,id',
@@ -116,6 +121,8 @@ class WebQuotationController extends Controller
 
         $validated = $request->validate(['status' => 'required|in:sent,accepted,declined']);
         $quotation->update(['status' => $validated['status']]);
+
+        event(new \App\Events\QuotationStatusChanged($quotation));
 
         return back()->with('success', "Quotation marked as {$validated['status']}.");
     }

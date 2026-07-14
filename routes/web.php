@@ -36,90 +36,129 @@ Route::post('/logout', [AuthController::class, 'webLogout'])->middleware('auth')
 
 // ── Admin Panel ──
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard
+    // Dashboard (always accessible to all admins)
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
     // Companies
-    Route::get('/companies', [AdminCompany::class, 'index'])->name('companies.index');
-    Route::get('/companies/{company}', [AdminCompany::class, 'show'])->name('companies.show');
-    Route::patch('/companies/{company}/status', [AdminCompany::class, 'updateStatus'])->name('companies.status');
-    Route::post('/companies/{company}/assign-package', [AdminCompany::class, 'assignPackage'])->name('companies.assign');
-    Route::delete('/companies/{company}', [AdminCompany::class, 'destroy'])->name('companies.destroy');
+    Route::middleware('permission:companies.manage')->group(function () {
+        Route::get('/companies', [AdminCompany::class, 'index'])->name('companies.index');
+        Route::get('/companies/create', [AdminCompany::class, 'create'])->name('companies.create');
+        Route::post('/companies', [AdminCompany::class, 'store'])->name('companies.store');
+        Route::get('/companies/{company}', [AdminCompany::class, 'show'])->name('companies.show');
+        Route::patch('/companies/{company}/status', [AdminCompany::class, 'updateStatus'])->name('companies.status');
+        Route::post('/companies/{company}/assign-package', [AdminCompany::class, 'assignPackage'])->name('companies.assign');
+        Route::delete('/companies/{company}', [AdminCompany::class, 'destroy'])->name('companies.destroy');
+    });
 
     // Packages
-    Route::get('/packages', [AdminPackage::class, 'index'])->name('packages.index');
-    Route::get('/packages/create', [AdminPackage::class, 'create'])->name('packages.create');
-    Route::post('/packages', [AdminPackage::class, 'store'])->name('packages.store');
-    Route::get('/packages/{package}/edit', [AdminPackage::class, 'edit'])->name('packages.edit');
-    Route::put('/packages/{package}', [AdminPackage::class, 'update'])->name('packages.update');
-    Route::delete('/packages/{package}', [AdminPackage::class, 'destroy'])->name('packages.destroy');
+    Route::middleware('permission:packages.manage')->group(function () {
+        Route::get('/packages', [AdminPackage::class, 'index'])->name('packages.index');
+        Route::get('/packages/create', [AdminPackage::class, 'create'])->name('packages.create');
+        Route::post('/packages', [AdminPackage::class, 'store'])->name('packages.store');
+        Route::get('/packages/{package}/edit', [AdminPackage::class, 'edit'])->name('packages.edit');
+        Route::put('/packages/{package}', [AdminPackage::class, 'update'])->name('packages.update');
+        Route::delete('/packages/{package}', [AdminPackage::class, 'destroy'])->name('packages.destroy');
+    });
 
     // Currencies
-    Route::get('/currencies', [AdminCurrency::class, 'index'])->name('currencies.index');
-    Route::get('/currencies/create', [AdminCurrency::class, 'create'])->name('currencies.create');
-    Route::post('/currencies', [AdminCurrency::class, 'store'])->name('currencies.store');
-    Route::get('/currencies/{currency}/edit', [AdminCurrency::class, 'edit'])->name('currencies.edit');
-    Route::put('/currencies/{currency}', [AdminCurrency::class, 'update'])->name('currencies.update');
-    Route::delete('/currencies/{currency}', [AdminCurrency::class, 'destroy'])->name('currencies.destroy');
+    Route::middleware('permission:currencies.manage')->group(function () {
+        Route::get('/currencies', [AdminCurrency::class, 'index'])->name('currencies.index');
+        Route::get('/currencies/create', [AdminCurrency::class, 'create'])->name('currencies.create');
+        Route::post('/currencies', [AdminCurrency::class, 'store'])->name('currencies.store');
+        Route::get('/currencies/{currency}/edit', [AdminCurrency::class, 'edit'])->name('currencies.edit');
+        Route::put('/currencies/{currency}', [AdminCurrency::class, 'update'])->name('currencies.update');
+        Route::delete('/currencies/{currency}', [AdminCurrency::class, 'destroy'])->name('currencies.destroy');
+    });
 
     // Taxes
-    Route::get('/taxes', [AdminTax::class, 'index'])->name('taxes.index');
-    Route::get('/taxes/create', [AdminTax::class, 'create'])->name('taxes.create');
-    Route::post('/taxes', [AdminTax::class, 'store'])->name('taxes.store');
-    Route::get('/taxes/{tax}/edit', [AdminTax::class, 'edit'])->name('taxes.edit');
-    Route::put('/taxes/{tax}', [AdminTax::class, 'update'])->name('taxes.update');
-    Route::delete('/taxes/{tax}', [AdminTax::class, 'destroy'])->name('taxes.destroy');
+    Route::middleware('permission:taxes.manage')->group(function () {
+        Route::get('/taxes', [AdminTax::class, 'index'])->name('taxes.index');
+        Route::get('/taxes/create', [AdminTax::class, 'create'])->name('taxes.create');
+        Route::post('/taxes', [AdminTax::class, 'store'])->name('taxes.store');
+        Route::get('/taxes/{tax}/edit', [AdminTax::class, 'edit'])->name('taxes.edit');
+        Route::put('/taxes/{tax}', [AdminTax::class, 'update'])->name('taxes.update');
+        Route::delete('/taxes/{tax}', [AdminTax::class, 'destroy'])->name('taxes.destroy');
+    });
 
     // Quotation Oversight
-    Route::get('/quotations', [AdminQuotation::class, 'index'])->name('quotations.index');
-    Route::get('/quotations/{quotation}', [AdminQuotation::class, 'show'])->name('quotations.show');
+    Route::middleware('permission:quotations.view')->group(function () {
+        Route::get('/quotations', [AdminQuotation::class, 'index'])->name('quotations.index');
+        Route::get('/quotations/{quotation}', [AdminQuotation::class, 'show'])->name('quotations.show');
+        Route::patch('/quotations/{quotation}/status', [AdminQuotation::class, 'updateStatus'])->name('quotations.status');
+        Route::delete('/quotations/{quotation}', [AdminQuotation::class, 'destroy'])->name('quotations.destroy');
+        Route::get('/quotations/{quotation}/pdf', [AdminQuotation::class, 'pdf'])->name('quotations.pdf');
+    });
 
     // Admin Users
-    Route::get('/users', [AdminUser::class, 'index'])->name('users.index');
-    Route::get('/users/create', [AdminUser::class, 'create'])->name('users.create');
-    Route::post('/users', [AdminUser::class, 'store'])->name('users.store');
-    Route::get('/users/{user}/edit', [AdminUser::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}', [AdminUser::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [AdminUser::class, 'destroy'])->name('users.destroy');
+    Route::middleware('permission:users.manage')->group(function () {
+        Route::get('/users', [AdminUser::class, 'index'])->name('users.index');
+        Route::get('/users/create', [AdminUser::class, 'create'])->name('users.create');
+        Route::post('/users', [AdminUser::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [AdminUser::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [AdminUser::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [AdminUser::class, 'destroy'])->name('users.destroy');
+    });
+
+    // Company Users (admin view of all company staff)
+    Route::middleware('permission:companies.manage')->prefix('company-users')->name('company-users.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\WebCompanyUserController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\WebCompanyUserController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\WebCompanyUserController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [\App\Http\Controllers\Admin\WebCompanyUserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [\App\Http\Controllers\Admin\WebCompanyUserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [\App\Http\Controllers\Admin\WebCompanyUserController::class, 'destroy'])->name('destroy');
+    });
 
     // Reports & Exports
-    Route::get('/reports', [AdminReport::class, 'index'])->name('reports.index');
-    Route::get('/reports/{type}/export', [AdminReport::class, 'export'])->name('reports.export');
+    Route::middleware('permission:reports.view')->group(function () {
+        Route::get('/reports', [AdminReport::class, 'index'])->name('reports.index');
+        Route::get('/reports/{type}/export', [AdminReport::class, 'export'])->name('reports.export');
+    });
 
     // Activity Log
-    Route::get('/activity-log', [AdminActivity::class, 'index'])->name('activity-log.index');
+    Route::middleware('permission:activity.view')->group(function () {
+        Route::get('/activity-log', [AdminActivity::class, 'index'])->name('activity-log.index');
+    });
 
     // System Health
-    Route::get('/health', [AdminHealth::class, 'index'])->name('health.index');
+    Route::middleware('permission:health.view')->group(function () {
+        Route::get('/health', [AdminHealth::class, 'index'])->name('health.index');
+    });
 
     // Pages CMS
-    Route::get('/pages', [AdminPage::class, 'index'])->name('pages.index');
-    Route::get('/pages/create', [AdminPage::class, 'create'])->name('pages.create');
-    Route::post('/pages', [AdminPage::class, 'store'])->name('pages.store');
-    Route::get('/pages/{page}/edit', [AdminPage::class, 'edit'])->name('pages.edit');
-    Route::put('/pages/{page}', [AdminPage::class, 'update'])->name('pages.update');
-    Route::delete('/pages/{page}', [AdminPage::class, 'destroy'])->name('pages.destroy');
+    Route::middleware('permission:pages.manage')->group(function () {
+        Route::get('/pages', [AdminPage::class, 'index'])->name('pages.index');
+        Route::get('/pages/create', [AdminPage::class, 'create'])->name('pages.create');
+        Route::post('/pages', [AdminPage::class, 'store'])->name('pages.store');
+        Route::get('/pages/{page}/edit', [AdminPage::class, 'edit'])->name('pages.edit');
+        Route::put('/pages/{page}', [AdminPage::class, 'update'])->name('pages.update');
+        Route::delete('/pages/{page}', [AdminPage::class, 'destroy'])->name('pages.destroy');
+    });
 
     // Email Templates
-    Route::get('/email-templates', [AdminEmailTemplate::class, 'index'])->name('email-templates.index');
-    Route::get('/email-templates/{template}/edit', [AdminEmailTemplate::class, 'edit'])->name('email-templates.edit');
-    Route::put('/email-templates/{template}', [AdminEmailTemplate::class, 'update'])->name('email-templates.update');
+    Route::middleware('permission:email_templates.manage')->group(function () {
+        Route::get('/email-templates', [AdminEmailTemplate::class, 'index'])->name('email-templates.index');
+        Route::get('/email-templates/{template}/edit', [AdminEmailTemplate::class, 'edit'])->name('email-templates.edit');
+        Route::put('/email-templates/{template}', [AdminEmailTemplate::class, 'update'])->name('email-templates.update');
+    });
 
     // Settings
-    Route::get('/settings', [AdminSettings::class, 'index'])->name('settings.index');
-    Route::put('/settings/general', [AdminSettings::class, 'updateGeneral'])->name('settings.general');
-    Route::put('/settings/social', [AdminSettings::class, 'updateSocial'])->name('settings.social');
-    Route::put('/settings/pusher', [AdminSettings::class, 'updatePusher'])->name('settings.pusher');
-    Route::put('/settings/email', [AdminSettings::class, 'updateEmail'])->name('settings.email');
+    Route::middleware('permission:settings.manage')->group(function () {
+        Route::get('/settings', [AdminSettings::class, 'index'])->name('settings.index');
+        Route::put('/settings/general', [AdminSettings::class, 'updateGeneral'])->name('settings.general');
+        Route::put('/settings/social', [AdminSettings::class, 'updateSocial'])->name('settings.social');
+        Route::put('/settings/pusher', [AdminSettings::class, 'updatePusher'])->name('settings.pusher');
+        Route::put('/settings/email', [AdminSettings::class, 'updateEmail'])->name('settings.email');
+    });
 });
 
-// ── Public Pages ──
+// Public Pages
 Route::get('/pages/{page}', function (\App\Models\Page $page) {
     if (!$page->is_published) abort(404);
     return view('pages.show', compact('page'));
 })->name('pages.show');
 
-// ── Company Panel (NOT admin) ──
+// Company Panel (NOT admin)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         if (auth()->user()->isSuperAdmin()) {
@@ -128,7 +167,7 @@ Route::middleware(['auth'])->group(function () {
         return app(CompanyDashboard::class)->index(request());
     })->name('dashboard');
 
-    // ── Profile Settings (all users) ──
+    // Profile Settings (all users)
     Route::get('/settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/settings/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/settings/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
