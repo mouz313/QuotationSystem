@@ -23,7 +23,10 @@ use App\Http\Controllers\Company\UserController as CompanyUser;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('welcome'));
+Route::get('/', function () {
+    $packages = \App\Models\Package::where('is_active', true)->orderBy('price')->get();
+    return view('welcome', compact('packages'));
+});
 
 // ── Guest Auth ──
 Route::middleware('guest')->group(function () {
