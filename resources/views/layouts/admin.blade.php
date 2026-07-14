@@ -95,13 +95,13 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         if (window.Echo) {
-            window.Echo.channel('admin')
+            window.Echo.private('admin')
                 .listen('.company.status.changed', function(e) {
                     addNotification('Company ' + e.name + ' status changed to ' + e.status);
                 });
 
             @if(auth()->user()->company_id)
-            window.Echo.channel('company.{{ auth()->user()->company_id }}')
+            window.Echo.private('company.{{ auth()->user()->company_id }}')
                 .listen('.quotation.status.changed', function(e) {
                     addNotification('Quotation ' + e.quote_number + ' is now ' + e.status);
                 })

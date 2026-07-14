@@ -61,14 +61,14 @@ class Company extends Model
     {
         $package = $this->package();
         if (!$package) return false;
-        return Client::where('user_id', $this->users()->pluck('id'))->count() < $package->max_clients;
+        return Client::whereIn('user_id', $this->users()->pluck('id'))->count() < $package->max_clients;
     }
 
     public function canAddQuotation(): bool
     {
         $package = $this->package();
         if (!$package) return false;
-        return Quotation::where('user_id', $this->users()->pluck('id'))->count() < $package->max_quotations;
+        return Quotation::whereIn('user_id', $this->users()->pluck('id'))->count() < $package->max_quotations;
     }
 
     public function userCount(): int
@@ -78,11 +78,11 @@ class Company extends Model
 
     public function clientCount(): int
     {
-        return Client::where('user_id', $this->users()->pluck('id'))->count();
+        return Client::whereIn('user_id', $this->users()->pluck('id'))->count();
     }
 
     public function quotationCount(): int
     {
-        return Quotation::where('user_id', $this->users()->pluck('id'))->count();
+        return Quotation::whereIn('user_id', $this->users()->pluck('id'))->count();
     }
 }
