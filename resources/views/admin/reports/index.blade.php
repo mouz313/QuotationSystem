@@ -30,7 +30,7 @@
             </div>
             <div class="flex gap-2">
                 <a href="/admin/reports/companies/export?format=pdf" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">PDF</a>
-                <a href="/admin/reports/companies/export?format=xlsx" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Excel</a>
+                <a href="/admin/reports/companies/export?format=xlsx" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">CSV</a>
             </div>
         </div>
     </div>
@@ -62,7 +62,7 @@
                 <input type="date" name="to_date" class="px-3 py-2 border rounded-lg text-sm outline-none">
             </div>
             <button type="submit" name="format" value="pdf" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">PDF</button>
-            <button type="submit" name="format" value="xlsx" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Excel</button>
+            <button type="submit" name="format" value="xlsx" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">CSV</button>
         </form>
     </div>
 
@@ -84,7 +84,7 @@
                 <input type="date" name="to_date" class="px-3 py-2 border rounded-lg text-sm outline-none">
             </div>
             <button type="submit" name="format" value="pdf" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">PDF</button>
-            <button type="submit" name="format" value="xlsx" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Excel</button>
+            <button type="submit" name="format" value="xlsx" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">CSV</button>
         </form>
     </div>
 </div>

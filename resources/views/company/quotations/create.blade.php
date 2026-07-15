@@ -185,6 +185,10 @@
                     <div class="p-6">
                         <textarea name="terms_conditions" rows="4" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-shadow hover:shadow-sm" placeholder="Payment due within 14 days...">{{ old('terms_conditions', $defaultTerms) }}</textarea>
                     </div>
+                    <div class="px-6 pb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Payment Instructions</label>
+                        <textarea name="payment_instructions" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Bank: ...&#10;Account: ...&#10;Reference: Quote #">{{ old('payment_instructions') }}</textarea>
+                    </div>
                 </div>
             </div>
 

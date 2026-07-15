@@ -15,9 +15,17 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $users = User::where('company_id', $request->user()->company_id)
-            ->latest()
-            ->paginate(15);
+        $users = User::where('company_id', $request->user()->company_id);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $users->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $users->latest()->paginate(15)->withQueryString();
 
         return view('company.users.index', compact('users'));
     }
@@ -50,6 +58,38 @@ class UserController extends Controller
         ]);
 
         return redirect('/company/users')->with('success', 'User added to team.');
+    }
+
+    public function edit(User $user)
+    {
+        if ($user->company_id !== request()->user()->company_id) abort(403);
+        return view('company.users.edit', compact('user'));
+    }
+
+    public function update(Request $request, User $user)
+    {
+        if ($user->company_id !== $request->user()->company_id) abort(403);
+
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . $user->id,
+            'role'     => 'required|in:company_admin,staff',
+            'password' => 'nullable|min:8',
+        ]);
+
+        $data = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+        ];
+
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($data);
+
+        return redirect('/company/users')->with('success', 'User updated.');
     }
 
     public function destroy(Request $request, User $user)

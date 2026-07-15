@@ -20,14 +20,15 @@ class AppServiceProvider extends ServiceProvider
             if (!empty($emailSettings)) {
                 $driver = $emailSettings['mail_driver'] ?? config('mail.default');
                 config([
-                    'mail.default'           => $driver,
+                    'mail.default'                 => $driver,
                     'mail.mailers.smtp.host'       => $emailSettings['mail_host'] ?? config('mail.mailers.smtp.host'),
                     'mail.mailers.smtp.port'       => $emailSettings['mail_port'] ?? config('mail.mailers.smtp.port'),
                     'mail.mailers.smtp.username'   => $emailSettings['mail_username'] ?? config('mail.mailers.smtp.username'),
                     'mail.mailers.smtp.password'   => $emailSettings['mail_password'] ?? config('mail.mailers.smtp.password'),
                     'mail.mailers.smtp.encryption' => $emailSettings['mail_encryption'] ?? config('mail.mailers.smtp.encryption'),
-                    'mail.from.address'     => $emailSettings['mail_from_address'] ?? config('mail.from.address'),
-                    'mail.from.name'        => $emailSettings['mail_from_name'] ?? config('mail.from.name'),
+                    'mail.mailers.smtp.timeout'    => 10,
+                    'mail.from.address'            => $emailSettings['mail_from_address'] ?? config('mail.from.address'),
+                    'mail.from.name'               => $emailSettings['mail_from_name'] ?? config('mail.from.name'),
                 ]);
             }
         } catch (\Exception $e) {

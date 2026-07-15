@@ -14,6 +14,12 @@ use App\Http\Controllers\Admin\WebPageController as AdminPage;
 use App\Http\Controllers\Admin\WebTaxController as AdminTax;
 use App\Http\Controllers\Admin\SettingsController as AdminSettings;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Client\Auth\ForgotPasswordController as ClientForgotPassword;
+use App\Http\Controllers\Client\Auth\LoginController as ClientLogin;
+use App\Http\Controllers\Client\Auth\ResetPasswordController as ClientResetPassword;
+use App\Http\Controllers\Client\DashboardController as ClientDashboard;
+use App\Http\Controllers\Client\ProfileController as ClientProfile;
+use App\Http\Controllers\Client\QuotationController as ClientQuotation;
 use App\Http\Controllers\Company\DashboardController as CompanyDashboard;
 use App\Http\Controllers\Company\WebClientController as CompanyClient;
 use App\Http\Controllers\Company\WebItemController as CompanyItem;
@@ -31,7 +37,7 @@ Route::get('/', function () {
 // ── Guest Auth ──
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'webLogin']);
+    Route::post('/login', [AuthController::class, 'webLogin'])->middleware('throttle:5,1');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'webRegister']);
 });
@@ -164,8 +170,33 @@ Route::get('/pages/{page}', function (\App\Models\Page $page) {
     return view('pages.show', compact('page'));
 })->name('pages.show');
 
+// ── Client Portal (no auth) ──
+Route::prefix('client')->name('client.')->group(function () {
+    Route::middleware('guest:client')->group(function () {
+        Route::get('/login', [ClientLogin::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [ClientLogin::class, 'login'])->middleware('throttle:5,1');
+        Route::get('/forgot-password', [ClientForgotPassword::class, 'showLinkRequestForm'])->name('password.request');
+        Route::post('/forgot-password', [ClientForgotPassword::class, 'sendResetLinkEmail'])->name('password.email');
+        Route::get('/reset-password/{token}', [ClientResetPassword::class, 'showResetForm'])->name('password.reset');
+        Route::post('/reset-password', [ClientResetPassword::class, 'reset'])->name('password.update');
+    });
+    Route::post('/logout', [ClientLogin::class, 'logout'])->middleware('auth:client')->name('logout');
+
+    Route::middleware('auth:client')->group(function () {
+        Route::get('/dashboard', [ClientDashboard::class, 'index'])->name('dashboard');
+        Route::get('/quotations/{quotation}', [ClientQuotation::class, 'show'])->name('quotations.show');
+        Route::post('/quotations/{quotation}/accept', [ClientQuotation::class, 'accept'])->name('quotations.accept');
+        Route::post('/quotations/{quotation}/decline', [ClientQuotation::class, 'decline'])->name('quotations.decline');
+        Route::post('/quotations/{quotation}/request-change', [ClientQuotation::class, 'requestChange'])->name('quotations.request-change');
+        Route::post('/quotations/{quotation}/submit-payment', [ClientQuotation::class, 'submitPayment'])->name('quotations.submit-payment');
+        Route::get('/profile', [ClientProfile::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [ClientProfile::class, 'updateProfile'])->name('profile.update');
+        Route::put('/profile/password', [ClientProfile::class, 'updatePassword'])->name('profile.password');
+    });
+});
+
 // Company Panel (NOT admin)
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'company.active'])->group(function () {
     Route::get('/dashboard', function () {
         if (auth()->user()->isSuperAdmin()) {
             return redirect('/admin/dashboard');
@@ -177,6 +208,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/settings/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/settings/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    Route::post('/notifications/mark-all-read', function () {
+        auth()->user()->notifications()->where('is_read', false)->update(['is_read' => true]);
+        return back();
+    })->name('notifications.mark-all-read');
 
     // Company-only routes (admin blocked)
     Route::middleware('not.admin')->group(function () {
@@ -204,12 +240,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/quotations/export', [CompanyQuotation::class, 'exportCsv'])->name('quotations.export');
         Route::post('/quotations/bulk-delete', [CompanyQuotation::class, 'bulkDelete'])->name('quotations.bulk-delete');
         Route::get('/quotations/{quotation}', [CompanyQuotation::class, 'show'])->name('quotations.show');
+        Route::get('/quotations/{quotation}/edit', [CompanyQuotation::class, 'edit'])->name('quotations.edit');
+        Route::put('/quotations/{quotation}', [CompanyQuotation::class, 'update'])->name('quotations.update');
         Route::get('/quotations/{quotation}/pdf', [CompanyQuotation::class, 'pdf'])->name('quotations.pdf');
         Route::get('/quotations/{quotation}/preview', [CompanyQuotation::class, 'preview'])->name('quotations.preview');
         Route::post('/quotations/{quotation}/clone', [CompanyQuotation::class, 'clone'])->name('quotations.clone');
         Route::post('/quotations/{quotation}/send-email', [CompanyQuotation::class, 'sendEmail'])->name('quotations.send-email');
+        Route::post('/quotations/{quotation}/amend', [CompanyQuotation::class, 'amend'])->name('quotations.amend');
         Route::patch('/quotations/{quotation}/status', [CompanyQuotation::class, 'updateStatus'])->name('quotations.status');
         Route::patch('/quotations/{quotation}/payment', [CompanyQuotation::class, 'updatePayment'])->name('quotations.payment');
+        Route::patch('/quotations/{quotation}/payment-instructions', [CompanyQuotation::class, 'updatePaymentInstructions'])->name('quotations.payment-instructions');
+        Route::post('/quotations/{quotation}/payments/{payment}/approve', [CompanyQuotation::class, 'approvePayment'])->name('quotations.payments.approve');
+        Route::post('/quotations/{quotation}/payments/{payment}/reject', [CompanyQuotation::class, 'rejectPayment'])->name('quotations.payments.reject');
         Route::post('/quotations/{quotation}/notes', [CompanyQuotation::class, 'addNote'])->name('quotations.notes');
 
         // Company user management (company_admin+)
@@ -217,6 +259,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/users', [CompanyUser::class, 'index'])->name('users.index');
             Route::get('/users/create', [CompanyUser::class, 'create'])->name('users.create');
             Route::post('/users', [CompanyUser::class, 'store'])->name('users.store');
+            Route::get('/users/{user}/edit', [CompanyUser::class, 'edit'])->name('users.edit');
+            Route::put('/users/{user}', [CompanyUser::class, 'update'])->name('users.update');
             Route::delete('/users/{user}', [CompanyUser::class, 'destroy'])->name('users.destroy');
 
             // Company settings

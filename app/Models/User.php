@@ -55,6 +55,16 @@ class User extends Authenticatable
         return $this->hasMany(Quotation::class);
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->where('is_read', false)->count();
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->role === 'super_admin';

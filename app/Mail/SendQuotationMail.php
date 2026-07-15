@@ -27,7 +27,7 @@ class SendQuotationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.send-quotation',
+            view: 'emails.send-quotation',
             with: [
                 'quoteNumber' => $this->quotation->quote_number,
                 'clientName'  => $this->quotation->client->name,

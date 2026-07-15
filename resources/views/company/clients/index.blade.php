@@ -11,6 +11,15 @@
         <a href="/clients/create" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">+ New Client</a>
     </div>
 </div>
+<form method="GET" action="/clients" class="mb-4">
+    <div class="flex gap-2">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email, or phone..." class="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        <button class="px-4 py-2 bg-gray-100 text-sm rounded-lg hover:bg-gray-200">Search</button>
+        @if(request('search'))
+            <a href="/clients" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Clear</a>
+        @endif
+    </div>
+</form>
 <div class="bg-white rounded-xl shadow overflow-hidden">
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 bg-gray-50">
@@ -34,7 +43,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">No clients yet. Add your first client!</td></tr>
+            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">{{ request('search') ? 'No clients match your search.' : 'No clients yet. Add your first client!' }}</td></tr>
         @endforelse
         </tbody>
     </table>

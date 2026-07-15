@@ -13,10 +13,13 @@ class EnsureUserIsCompanyAdmin
         $user = $request->user();
 
         if (!$user || (!$user->isCompanyAdmin() && !$user->isSuperAdmin())) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Unauthorized. Company admin access required.',
-            ], 403);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Unauthorized. Company admin access required.',
+                ], 403);
+            }
+            return redirect('/dashboard')->with('error', 'Unauthorized. Company admin access required.');
         }
 
         return $next($request);

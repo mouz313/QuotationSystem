@@ -11,10 +11,13 @@ class EnsureUserIsSuperAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (!$request->user() || !$request->user()->isSuperAdmin()) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Unauthorized. Super admin access required.',
-            ], 403);
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('admin/*')) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Unauthorized. Super admin access required.',
+                ], 403);
+            }
+            return redirect('/dashboard')->with('error', 'Unauthorized. Super admin access required.');
         }
 
         return $next($request);

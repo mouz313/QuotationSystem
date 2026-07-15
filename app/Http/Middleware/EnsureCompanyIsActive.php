@@ -13,10 +13,14 @@ class EnsureCompanyIsActive
         $user = $request->user();
 
         if ($user && $user->company && $user->company->isBlocked()) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Your company has been blocked. Contact support.',
-            ], 403);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Your company has been blocked. Contact support.',
+                ], 403);
+            }
+            auth()->logout();
+            return redirect('/login')->with('error', 'Your company has been blocked. Contact support.');
         }
 
         return $next($request);

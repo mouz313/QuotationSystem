@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Item;
 use Illuminate\Http\Request;
 
@@ -10,9 +11,17 @@ class WebItemController extends Controller
 {
     public function index(Request $request)
     {
-        $items = Item::where('user_id', $request->user()->id)
-            ->latest()
-            ->paginate(15);
+        $items = Item::where('user_id', $request->user()->id);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $items->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $items->latest()->paginate(15)->withQueryString();
 
         return view('company.items.index', compact('items'));
     }
@@ -30,7 +39,9 @@ class WebItemController extends Controller
             'unit_price'  => 'required|numeric|min:0',
         ]);
 
-        Item::create(array_merge($validated, ['user_id' => $request->user()->id]));
+        $item = Item::create(array_merge($validated, ['user_id' => $request->user()->id]));
+
+        ActivityLog::log('item_created', $item, 'Item "' . $item->title . '" created');
 
         return redirect('/items')->with('success', 'Item added.');
     }
@@ -53,12 +64,15 @@ class WebItemController extends Controller
 
         $item->update($validated);
 
+        ActivityLog::log('item_updated', $item, 'Item "' . $item->title . '" updated');
+
         return redirect('/items')->with('success', 'Item updated.');
     }
 
     public function destroy(Item $item)
     {
         if ($item->user_id !== request()->user()->id) abort(403);
+        ActivityLog::log('item_deleted', $item, 'Item "' . $item->title . '" deleted');
         $item->delete();
         return redirect('/items')->with('success', 'Item deleted.');
     }

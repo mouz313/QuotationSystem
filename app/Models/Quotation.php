@@ -13,13 +13,16 @@ class Quotation extends Model
         'quote_number', 'issue_date', 'expiry_date',
         'discount_amount', 'tax_percentage',
         'grand_total', 'status', 'terms_conditions',
+        'payment_instructions',
         'payment_status', 'paid_amount', 'paid_at',
+        'viewed_at',
     ];
 
     protected $casts = [
         'issue_date'     => 'date',
         'expiry_date'    => 'date',
         'paid_at'        => 'date',
+        'viewed_at'      => 'datetime',
         'paid_amount'    => 'decimal:2',
     ];
 
@@ -57,6 +60,26 @@ class Quotation extends Model
     {
         return $this->hasMany(ActivityLog::class, 'subject_id', 'id')
             ->where('subject_type', static::class);
+    }
+
+    public function statusLogs(): HasMany
+    {
+        return $this->hasMany(QuotationStatusLog::class);
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(QuotationRevision::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function getPendingPaymentsAttribute()
+    {
+        return $this->payments()->where('status', 'pending')->get();
     }
 
     public function getCurrencySymbolAttribute(): string
