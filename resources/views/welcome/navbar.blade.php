@@ -1,18 +1,18 @@
-<nav class="absolute top-0 left-0 right-0 z-50">
+<nav id="landing-nav" class="absolute top-0 left-0 right-0 z-50 transition-all duration-300">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <a href="/" class="text-xl font-bold text-indigo-600">QuotationSystem</a>
-        <div class="hidden md:flex items-center gap-8 text-sm text-gray-600">
-            <a href="#features" class="hover:text-indigo-600 transition">Features</a>
-            <a href="#how-it-works" class="hover:text-indigo-600 transition">How It Works</a>
-            <a href="#pricing" class="hover:text-indigo-600 transition">Pricing</a>
+        <a href="/" class="nav-brand text-xl font-bold text-indigo-600 transition-colors">QuotationSystem</a>
+        <div class="hidden md:flex items-center gap-8 text-sm">
+            <a href="#features" class="nav-link text-gray-600 hover:text-indigo-600 transition-colors">Features</a>
+            <a href="#how-it-works" class="nav-link text-gray-600 hover:text-indigo-600 transition-colors">How It Works</a>
+            <a href="#pricing" class="nav-link text-gray-600 hover:text-indigo-600 transition-colors">Pricing</a>
         </div>
         <div class="flex items-center gap-3">
             @auth
-                <a href="/dashboard" class="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700">Dashboard</a>
+                <a href="/dashboard" class="nav-link px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Dashboard</a>
             @else
-                <a href="{{ route('login') }}" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 transition">Log in</a>
+                <a href="{{ route('login') }}" class="nav-link px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">Log in</a>
                 @if(Route::has('register'))
-                    <a href="{{ route('register') }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">Get Started</a>
+                    <a href="{{ route('register') }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all hover:shadow-lg hover:shadow-indigo-300">Get Started</a>
                 @endif
             @endauth
         </div>

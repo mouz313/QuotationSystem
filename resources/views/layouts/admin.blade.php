@@ -7,7 +7,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen flex">
-    <aside class="w-64 bg-gray-900 text-white min-h-screen fixed flex flex-col">
+    <aside class="w-64 bg-gray-900 text-white h-screen fixed flex flex-col">
         <div class="p-4 border-b border-gray-800">
             <a href="/admin/dashboard" class="text-lg font-bold text-indigo-400">QS Admin</a>
         </div>

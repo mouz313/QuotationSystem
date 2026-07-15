@@ -13,11 +13,14 @@ class Quotation extends Model
         'quote_number', 'issue_date', 'expiry_date',
         'discount_amount', 'tax_percentage',
         'grand_total', 'status', 'terms_conditions',
+        'payment_status', 'paid_amount', 'paid_at',
     ];
 
     protected $casts = [
-        'issue_date' => 'date',
-        'expiry_date' => 'date',
+        'issue_date'     => 'date',
+        'expiry_date'    => 'date',
+        'paid_at'        => 'date',
+        'paid_amount'    => 'decimal:2',
     ];
 
     public function user(): BelongsTo
@@ -43,6 +46,17 @@ class Quotation extends Model
     public function items(): HasMany
     {
         return $this->hasMany(QuotationItem::class);
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(QuotationNote::class);
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'subject_id', 'id')
+            ->where('subject_type', static::class);
     }
 
     public function getCurrencySymbolAttribute(): string

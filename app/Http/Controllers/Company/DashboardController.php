@@ -27,6 +27,24 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('company.dashboard', compact('stats', 'recentQuotations'));
+        $chartData = Quotation::where('user_id', $user->id)
+            ->whereYear('issue_date', now()->year)
+            ->selectRaw("DATE_FORMAT(issue_date, '%m') as month, COUNT(*) as total, SUM(grand_total) as revenue")
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->keyBy('month');
+
+        $months = [];
+        $counts = [];
+        $revenues = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $key = str_pad($m, 2, '0', STR_PAD_LEFT);
+            $months[] = date('M', mktime(0, 0, 0, $m, 1));
+            $counts[] = (int) ($chartData[$key]->total ?? 0);
+            $revenues[] = (float) ($chartData[$key]->revenue ?? 0);
+        }
+
+        return view('company.dashboard', compact('stats', 'recentQuotations', 'months', 'counts', 'revenues'));
     }
 }

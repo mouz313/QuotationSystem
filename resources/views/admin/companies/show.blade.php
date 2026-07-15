@@ -7,6 +7,7 @@
         <p class="text-sm text-gray-500">{{ $company->email }}</p>
     </div>
     <div class="flex gap-2">
+        <a href="/admin/companies/{{ $company->id }}/edit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Edit</a>
         <a href="/admin/companies" class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Back</a>
     </div>
 </div>

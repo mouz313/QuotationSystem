@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
@@ -107,5 +108,57 @@ class SettingsController extends Controller
         ActivityLog::log('updated', null, 'Updated email settings');
 
         return redirect('/admin/settings?tab=email')->with('success', 'Email settings updated.');
+    }
+
+    public function sendTestEmail(Request $request)
+    {
+        set_time_limit(15);
+        ini_set('default_socket_timeout', 5);
+
+        $validated = $request->validate([
+            'test_email' => 'required|email',
+        ]);
+
+        $emailSettings = Setting::getGroup('email');
+        $driver = $emailSettings['mail_driver'] ?? 'log';
+
+        config([
+            'mail.default'                 => $driver,
+            'mail.mailers.smtp.host'       => $emailSettings['mail_host'] ?? config('mail.mailers.smtp.host'),
+            'mail.mailers.smtp.port'       => $emailSettings['mail_port'] ?? config('mail.mailers.smtp.port'),
+            'mail.mailers.smtp.username'   => $emailSettings['mail_username'] ?? config('mail.mailers.smtp.username'),
+            'mail.mailers.smtp.password'   => $emailSettings['mail_password'] ?? config('mail.mailers.smtp.password'),
+            'mail.mailers.smtp.encryption' => $emailSettings['mail_encryption'] ?? config('mail.mailers.smtp.encryption'),
+            'mail.mailers.smtp.timeout'    => 10,
+            'mail.from.address'           => $emailSettings['mail_from_address'] ?? config('mail.from.address'),
+            'mail.from.name'              => $emailSettings['mail_from_name'] ?? config('mail.from.name'),
+        ]);
+
+        $email = $validated['test_email'];
+
+        try {
+            $data = [
+                'appName'     => config('app.name'),
+                'fromAddress' => config('mail.from.address'),
+                'toAddress'   => $email,
+                'driver'      => $driver,
+                'host'        => $emailSettings['mail_host'] ?? 'N/A',
+                'port'        => $emailSettings['mail_port'] ?? 'N/A',
+                'encryption'  => $emailSettings['mail_encryption'] ?? 'None',
+                'sentAt'      => now()->format('F j, Y \a\t g:i A T'),
+            ];
+
+            Mail::send('emails.test', $data, function ($message) use ($email) {
+                $message->to($email)
+                    ->subject('Test Email - ' . config('app.name'));
+            });
+
+            ActivityLog::log('email_test', null, "Sent test email to {$email}");
+            return back()->with('success', "Test email sent successfully to {$email}");
+        } catch (\Symfony\Component\Mailer\Exception\TransportException $e) {
+            return back()->with('error', 'SMTP connection failed: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to send test email: ' . $e->getMessage());
+        }
     }
 }

@@ -5,10 +5,16 @@ namespace App\Models;
 use App\Models\Client;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Company extends Model
 {
-    protected $fillable = ['name', 'email', 'phone', 'address', 'website', 'status'];
+    protected $fillable = ['name', 'email', 'phone', 'address', 'website', 'default_terms', 'logo', 'brand_color', 'brand_font', 'status'];
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo ? Storage::url($this->logo) : null;
+    }
 
     public function users(): HasMany
     {

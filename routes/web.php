@@ -48,6 +48,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/companies/create', [AdminCompany::class, 'create'])->name('companies.create');
         Route::post('/companies', [AdminCompany::class, 'store'])->name('companies.store');
         Route::get('/companies/{company}', [AdminCompany::class, 'show'])->name('companies.show');
+        Route::get('/companies/{company}/edit', [AdminCompany::class, 'edit'])->name('companies.edit');
+        Route::put('/companies/{company}', [AdminCompany::class, 'update'])->name('companies.update');
         Route::patch('/companies/{company}/status', [AdminCompany::class, 'updateStatus'])->name('companies.status');
         Route::post('/companies/{company}/assign-package', [AdminCompany::class, 'assignPackage'])->name('companies.assign');
         Route::delete('/companies/{company}', [AdminCompany::class, 'destroy'])->name('companies.destroy');
@@ -152,6 +154,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::put('/settings/social', [AdminSettings::class, 'updateSocial'])->name('settings.social');
         Route::put('/settings/pusher', [AdminSettings::class, 'updatePusher'])->name('settings.pusher');
         Route::put('/settings/email', [AdminSettings::class, 'updateEmail'])->name('settings.email');
+        Route::post('/settings/email/test', [AdminSettings::class, 'sendTestEmail'])->name('settings.email.test');
     });
 });
 
@@ -184,6 +187,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/clients/{client}/edit', [CompanyClient::class, 'edit'])->name('clients.edit');
         Route::put('/clients/{client}', [CompanyClient::class, 'update'])->name('clients.update');
         Route::delete('/clients/{client}', [CompanyClient::class, 'destroy'])->name('clients.destroy');
+        Route::get('/clients/export', [CompanyClient::class, 'exportCsv'])->name('clients.export');
 
         // Item routes
         Route::get('/items', [CompanyItem::class, 'index'])->name('items.index');
@@ -197,8 +201,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/quotations', [CompanyQuotation::class, 'index'])->name('quotations.index');
         Route::get('/quotations/create', [CompanyQuotation::class, 'create'])->name('quotations.create');
         Route::post('/quotations', [CompanyQuotation::class, 'store'])->name('quotations.store');
+        Route::get('/quotations/export', [CompanyQuotation::class, 'exportCsv'])->name('quotations.export');
+        Route::post('/quotations/bulk-delete', [CompanyQuotation::class, 'bulkDelete'])->name('quotations.bulk-delete');
         Route::get('/quotations/{quotation}', [CompanyQuotation::class, 'show'])->name('quotations.show');
+        Route::get('/quotations/{quotation}/pdf', [CompanyQuotation::class, 'pdf'])->name('quotations.pdf');
+        Route::get('/quotations/{quotation}/preview', [CompanyQuotation::class, 'preview'])->name('quotations.preview');
+        Route::post('/quotations/{quotation}/clone', [CompanyQuotation::class, 'clone'])->name('quotations.clone');
+        Route::post('/quotations/{quotation}/send-email', [CompanyQuotation::class, 'sendEmail'])->name('quotations.send-email');
         Route::patch('/quotations/{quotation}/status', [CompanyQuotation::class, 'updateStatus'])->name('quotations.status');
+        Route::patch('/quotations/{quotation}/payment', [CompanyQuotation::class, 'updatePayment'])->name('quotations.payment');
+        Route::post('/quotations/{quotation}/notes', [CompanyQuotation::class, 'addNote'])->name('quotations.notes');
 
         // Company user management (company_admin+)
         Route::middleware('company.admin')->prefix('company')->name('company.')->group(function () {

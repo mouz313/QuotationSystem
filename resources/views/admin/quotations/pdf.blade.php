@@ -1,14 +1,18 @@
+@php
+    $brandColor = $company?->brand_color ?? '#4f46e5';
+    $brandFont = $company?->brand_font ?? 'Helvetica';
+@endphp
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; font-size: 12px; margin: 0; padding: 20px; }
-        .header { margin-bottom: 30px; border-bottom: 2px solid #4f46e5; padding-bottom: 15px; }
-        .company-name { font-size: 22px; font-weight: bold; color: #4f46e5; margin: 0 0 4px 0; }
+        body { font-family: '{{ $brandFont }}', 'Helvetica', 'Arial', sans-serif; color: #333; font-size: 12px; margin: 0; padding: 20px; }
+        .header { margin-bottom: 30px; border-bottom: 2px solid {{ $brandColor }}; padding-bottom: 15px; }
+        .company-name { font-size: 22px; font-weight: bold; color: {{ $brandColor }}; margin: 0 0 4px 0; }
         .company-info { font-size: 11px; color: #666; margin: 2px 0; }
         .quote-title { text-align: right; }
-        .quote-title h1 { font-size: 28px; color: #4f46e5; margin: 0 0 6px 0; text-transform: uppercase; }
+        .quote-title h1 { font-size: 28px; color: {{ $brandColor }}; margin: 0 0 6px 0; text-transform: uppercase; }
         .quote-number { font-size: 13px; color: #555; }
         .meta-table { width: 100%; margin-bottom: 25px; }
         .meta-table td { vertical-align: top; padding: 8px 0; }
@@ -20,7 +24,7 @@
         .status-accepted { background: #d1fae5; color: #059669; }
         .status-declined { background: #fee2e2; color: #dc2626; }
         table.items { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table.items th { background: #4f46e5; color: #fff; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        table.items th { background: {{ $brandColor }}; color: #fff; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
         table.items th:last-child, table.items td:last-child { text-align: right; }
         table.items th:nth-child(3), table.items td:nth-child(3),
         table.items th:nth-child(4), table.items td:nth-child(4) { text-align: right; }
@@ -31,7 +35,7 @@
         .totals td { padding: 5px 8px; font-size: 11px; }
         .totals .label { color: #666; text-align: left; }
         .totals .value { text-align: right; font-weight: 600; }
-        .totals .grand-total td { border-top: 2px solid #4f46e5; padding-top: 8px; font-size: 14px; font-weight: bold; color: #4f46e5; }
+        .totals .grand-total td { border-top: 2px solid {{ $brandColor }}; padding-top: 8px; font-size: 14px; font-weight: bold; color: {{ $brandColor }}; }
         .clear { clear: both; }
         .terms { margin-top: 30px; padding-top: 15px; border-top: 1px solid #e5e7eb; }
         .terms h4 { font-size: 11px; text-transform: uppercase; color: #999; margin: 0 0 6px 0; letter-spacing: 0.5px; }
@@ -45,11 +49,23 @@
     <table class="meta-table">
         <tr>
             <td style="width: 60%;">
-                @if($quotation->user->company)
-                    <div class="company-name">{{ $quotation->user->company->name }}</div>
-                    @if($quotation->user->company->email)<div class="company-info">{{ $quotation->user->company->email }}</div>@endif
-                    @if($quotation->user->company->phone)<div class="company-info">{{ $quotation->user->company->phone }}</div>@endif
-                    @if($quotation->user->company->address)<div class="company-info">{{ $quotation->user->company->address }}</div>@endif
+                @php $company = $quotation->user->company; @endphp
+                @if($company)
+                    <table>
+                        <tr>
+                            <td style="vertical-align: middle; padding-right: 12px;">
+                                @if($company->logo)
+                                    <img src="{{ storage_path('app/public/' . $company->logo) }}" alt="Logo" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                                @endif
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <div class="company-name">{{ $company->name }}</div>
+                                @if($company->email)<div class="company-info">{{ $company->email }}</div>@endif
+                                @if($company->phone)<div class="company-info">{{ $company->phone }}</div>@endif
+                                @if($company->address)<div class="company-info">{{ $company->address }}</div>@endif
+                            </td>
+                        </tr>
+                    </table>
                 @endif
             </td>
             <td class="quote-title">

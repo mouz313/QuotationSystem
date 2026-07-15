@@ -81,6 +81,27 @@ class WebCompanyController extends Controller
         return view('admin.companies.create', compact('packages'));
     }
 
+    public function edit(Company $company)
+    {
+        return view('admin.companies.edit', compact('company'));
+    }
+
+    public function update(Request $request, Company $company)
+    {
+        $validated = $request->validate([
+            'name'    => 'required|string|max:255',
+            'email'   => 'required|email|unique:companies,email,' . $company->id,
+            'phone'   => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:500',
+            'website' => 'nullable|string|max:255',
+        ]);
+
+        $company->update($validated);
+        ActivityLog::log('updated', $company, 'Updated company ' . $company->name);
+
+        return redirect('/admin/companies/' . $company->id)->with('success', 'Company updated.');
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

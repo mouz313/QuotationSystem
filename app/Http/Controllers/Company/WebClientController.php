@@ -70,4 +70,26 @@ class WebClientController extends Controller
         $client->delete();
         return redirect('/clients')->with('success', 'Client deleted.');
     }
+
+    public function exportCsv(Request $request)
+    {
+        $clients = Client::where('user_id', $request->user()->id)->latest()->get();
+
+        $filename = 'clients-' . now()->format('Y-m-d') . '.csv';
+        $handle = fopen('php://temp', 'w+');
+        fputcsv($handle, ['Name', 'Email', 'Phone', 'Address', 'Created']);
+
+        foreach ($clients as $c) {
+            fputcsv($handle, [$c->name, $c->email, $c->phone ?? '', $c->address ?? '', $c->created_at->format('Y-m-d')]);
+        }
+
+        rewind($handle);
+        $content = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($content, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
 }

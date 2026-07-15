@@ -6,7 +6,10 @@
         <h1 class="text-2xl font-bold text-gray-800">Clients</h1>
         <p class="text-sm text-gray-500">Manage your client list</p>
     </div>
-    <a href="/clients/create" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">+ New Client</a>
+    <div class="flex gap-2">
+        <a href="/clients/export" class="px-4 py-2 border text-sm rounded-lg hover:bg-gray-50">Export CSV</a>
+        <a href="/clients/create" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">+ New Client</a>
+    </div>
 </div>
 <div class="bg-white rounded-xl shadow overflow-hidden">
     <table class="w-full text-sm">

@@ -8,8 +8,12 @@
 </head>
 <body class="bg-gray-50 min-h-screen flex">
     <aside class="w-64 bg-gray-900 text-white min-h-screen fixed flex flex-col">
-        <div class="p-4 border-b border-gray-800">
-            <a href="/dashboard" class="text-lg font-bold text-indigo-400">QuotationSystem</a>
+        <div class="p-4 border-b border-gray-800 flex items-center gap-3">
+            @php $companyLogo = auth()->user()->company?->logo_url; @endphp
+            @if($companyLogo)
+                <img src="{{ $companyLogo }}" alt="Logo" class="w-8 h-8 rounded-lg object-cover">
+            @endif
+            <a href="/dashboard" class="text-lg font-bold text-indigo-400">{{ auth()->user()->company?->name ?? 'QuotationSystem' }}</a>
         </div>
         <nav class="flex-1 p-4 space-y-1">
             <x-nav-link href="/dashboard" icon="dashboard">Dashboard</x-nav-link>

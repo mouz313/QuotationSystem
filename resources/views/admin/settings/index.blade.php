@@ -238,6 +238,28 @@
                 </div>
                 <button class="px-5 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 font-medium">Save Email Settings</button>
             </form>
+
+            <hr class="my-8 border-gray-200">
+
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <h3 class="text-base font-semibold text-gray-800">Send Test Email</h3>
+                </div>
+                <p class="text-sm text-gray-500 mb-4">Verify your email settings by sending a test message. Save your settings first before testing.</p>
+                <form method="POST" action="/admin/settings/email/test" class="flex gap-3 items-end">
+                    @csrf
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Recipient Email</label>
+                        <input type="email" name="test_email" placeholder="you@example.com" required
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <button class="px-5 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 font-medium flex items-center gap-2 whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                        Send Test
+                    </button>
+                </form>
+            </div>
         @endif
 
     </div>

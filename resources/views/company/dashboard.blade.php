@@ -5,6 +5,7 @@
     <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
     <p class="text-sm text-gray-500">Welcome back, {{ auth()->user()->name }}</p>
 </div>
+
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-xl shadow p-4">
         <div class="text-sm text-gray-500">Total Clients</div>
@@ -23,6 +24,18 @@
         <div class="text-2xl font-bold text-green-600">${{ number_format($stats['revenue'], 2) }}</div>
     </div>
 </div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Monthly Quotations ({{ now()->year }})</h2>
+        <canvas id="chartQuotations" height="200"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Monthly Revenue ({{ now()->year }})</h2>
+        <canvas id="chartRevenue" height="200"></canvas>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="bg-white rounded-xl shadow p-6">
         <h2 class="text-lg font-semibold mb-4">Recent Quotations</h2>
@@ -45,7 +58,6 @@
             @empty
                 <tr><td colspan="4" class="py-4 text-center text-gray-400">No quotations yet.</td></tr>
             @endforelse
-            </tbody>
         </table>
     </div>
     <div class="bg-white rounded-xl shadow p-6">
@@ -57,4 +69,51 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const months = @json($months);
+    const counts = @json($counts);
+    const revenues = @json($revenues);
+
+    new Chart(document.getElementById('chartQuotations'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Quotations',
+                data: counts,
+                backgroundColor: '#4f46e5',
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    new Chart(document.getElementById('chartRevenue'), {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Revenue ($)',
+                data: revenues,
+                borderColor: '#059669',
+                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                fill: true,
+                tension: 0.3,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+});
+</script>
 @endsection
