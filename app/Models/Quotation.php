@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quotation extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'user_id', 'client_id', 'currency_id', 'tax_id',
-        'quote_number', 'issue_date', 'expiry_date',
+        'quote_number', 'type', 'issue_date', 'expiry_date',
         'discount_amount', 'tax_percentage',
         'grand_total', 'status', 'terms_conditions',
         'payment_instructions',
@@ -80,6 +82,31 @@ class Quotation extends Model
     public function getPendingPaymentsAttribute()
     {
         return $this->payments()->where('status', 'pending')->get();
+    }
+
+    public function isMilestone(): bool
+    {
+        return $this->type === 'milestone';
+    }
+
+    public function getMilestoneProgressAttribute(): array
+    {
+        $items = $this->items()->orderBy('sort_order')->get();
+        $totalMilestones = $items->count();
+        $completedPayments = 0;
+
+        foreach ($items as $item) {
+            $approvedTotal = $item->payments()->where('status', 'approved')->sum('amount');
+            if ($approvedTotal >= $item->subtotal) {
+                $completedPayments++;
+            }
+        }
+
+        return [
+            'total'     => $totalMilestones,
+            'completed' => $completedPayments,
+            'percent'   => $totalMilestones > 0 ? round(($completedPayments / $totalMilestones) * 100) : 0,
+        ];
     }
 
     public function getCurrencySymbolAttribute(): string

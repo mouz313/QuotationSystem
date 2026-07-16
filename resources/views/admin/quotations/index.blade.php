@@ -55,11 +55,7 @@
                 <td class="px-4 py-3 text-gray-600">{{ $q->issue_date->format('M d, Y') }}</td>
                 <td class="px-4 py-3 font-medium">{{ $q->currency_symbol }}{{ number_format($q->grand_total, 2) }}</td>
                 <td class="px-4 py-3">
-                    @if($q->status === 'draft')<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">Draft</span>
-                    @elseif($q->status === 'sent')<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">Sent</span>
-                    @elseif($q->status === 'accepted')<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Accepted</span>
-                    @else<span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">Declined</span>
-                    @endif
+                    <x-quotation-status-badge :status="$q->status" />
                 </td>
                 <td class="px-4 py-3"><a href="/admin/quotations/{{ $q->id }}" class="text-indigo-600 hover:underline text-xs">View</a></td>
             </tr>

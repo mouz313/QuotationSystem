@@ -27,7 +27,7 @@
             <tr class="border-t hover:bg-gray-50">
                 <td class="px-4 py-3 font-medium">{{ $item->title }}</td>
                 <td class="px-4 py-3 text-gray-600 max-w-xs truncate">{{ $item->description ?? '-' }}</td>
-                <td class="px-4 py-3 font-medium">{{ App\Models\Currency::where('is_default', true)->first()?->symbol ?? '$' }}{{ number_format($item->unit_price, 2) }}</td>
+                <td class="px-4 py-3 font-medium">{{ $defaultCurrency?->symbol ?? '$' }}{{ number_format($item->unit_price, 2) }}</td>
                 <td class="px-4 py-3">
                     <div class="flex gap-2">
                         <a href="/items/{{ $item->id }}/edit" class="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">Edit</a>

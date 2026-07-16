@@ -67,15 +67,36 @@
         <div class="p-4 border-t border-gray-800">
             <div class="flex items-center justify-between mb-2">
                 <div class="text-xs text-gray-500">{{ auth()->user()->name }}</div>
-                <div class="relative" id="notification-bell">
-                    <button onclick="document.getElementById('notification-dropdown').classList.toggle('hidden')" class="text-gray-400 hover:text-white relative">
+                @php
+                    $adminNotifications = auth()->user()->notifications()->latest()->limit(10)->get();
+                    $unreadCount = auth()->user()->unreadNotificationsCount();
+                @endphp
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="text-gray-400 hover:text-white relative">
                         <x-icon name="bell" class="w-4 h-4" />
-                        <span id="notification-count" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">0</span>
+                        @if($unreadCount > 0)
+                            <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{{ $unreadCount }}</span>
+                        @endif
                     </button>
-                    <div id="notification-dropdown" class="hidden absolute right-0 bottom-8 w-72 bg-white rounded-lg shadow-lg border z-50">
-                        <div class="p-3 border-b text-xs font-semibold text-gray-700">Notifications</div>
-                        <div id="notification-list" class="max-h-64 overflow-y-auto">
-                            <div class="p-3 text-xs text-gray-400 text-center">No notifications yet</div>
+                    <div x-show="open" @click.outside="open = false" x-cloak class="absolute right-0 bottom-8 w-72 bg-white rounded-lg shadow-lg border z-50">
+                        <div class="p-3 border-b text-xs font-semibold text-gray-700 flex justify-between items-center">
+                            <span>Notifications</span>
+                            @if($unreadCount > 0)
+                                <form method="POST" action="/notifications/mark-all-read" class="inline">
+                                    @csrf
+                                    <button class="text-indigo-600 hover:underline text-[10px]">Mark all read</button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="max-h-64 overflow-y-auto">
+                            @forelse($adminNotifications as $notification)
+                                <a href="{{ $notification->url ?? '#' }}" class="block p-3 text-xs border-b hover:bg-gray-50 {{ $notification->is_read ? 'text-gray-500' : 'text-gray-800 bg-indigo-50' }}">
+                                    <div>{{ $notification->message }}</div>
+                                    <div class="text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                </a>
+                            @empty
+                                <div class="p-3 text-xs text-gray-400 text-center">No notifications yet</div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -92,42 +113,5 @@
         <x-alert type="error" />
         @yield('content')
     </div>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (window.Echo) {
-            window.Echo.private('admin')
-                .listen('.company.status.changed', function(e) {
-                    addNotification('Company ' + e.name + ' status changed to ' + e.status);
-                });
-
-            @if(auth()->user()->company_id)
-            window.Echo.private('company.{{ auth()->user()->company_id }}')
-                .listen('.quotation.status.changed', function(e) {
-                    addNotification('Quotation ' + e.quote_number + ' is now ' + e.status);
-                })
-                .listen('.package.assigned', function(e) {
-                    addNotification('Package ' + e.package_name + ' assigned to ' + e.company_name);
-                });
-            @endif
-        }
-    });
-
-    var notificationCount = 0;
-    function addNotification(message) {
-        var list = document.getElementById('notification-list');
-        var count = document.getElementById('notification-count');
-        var empty = list.querySelector('.text-center');
-        if (empty) empty.remove();
-
-        var item = document.createElement('div');
-        item.className = 'p-3 text-xs text-gray-700 border-b hover:bg-gray-50';
-        item.innerHTML = '<div>' + message + '</div><div class="text-gray-400 mt-1">Just now</div>';
-        list.insertBefore(item, list.firstChild);
-
-        notificationCount++;
-        count.textContent = notificationCount;
-        count.classList.remove('hidden');
-    }
-    </script>
 </body>
 </html>

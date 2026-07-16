@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\ClientUser;
+use App\Models\Company;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -17,19 +18,30 @@ class ClientWelcomeMail extends Mailable
         public ClientUser $clientUser,
         public string $tempPassword,
         public ?string $quoteNumber = null,
+        public ?Company $company = null,
     ) {}
 
     public function envelope(): Envelope
     {
+        $companyName = $this->company->name ?? config('app.name');
         return new Envelope(
-            subject: 'Welcome to ' . config('app.name') . ' - Your Client Portal',
+            subject: 'Welcome to ' . $companyName . ' - Your Client Portal',
         );
     }
 
     public function content(): Content
     {
+        $brandColor = $this->company->brand_color ?? '#4f46e5';
+
         return new Content(
             view: 'emails.client-welcome',
+            with: [
+                'clientUser' => $this->clientUser,
+                'tempPassword' => $this->tempPassword,
+                'quoteNumber' => $this->quoteNumber,
+                'company' => $this->company,
+                'brandColor' => $brandColor,
+            ],
         );
     }
 }

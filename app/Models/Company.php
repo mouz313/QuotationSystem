@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Models\Client;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
 class Company extends Model
 {
-    protected $fillable = ['name', 'email', 'phone', 'address', 'website', 'default_terms', 'logo', 'brand_color', 'brand_font', 'status'];
+    use SoftDeletes;
+    protected $fillable = ['name', 'email', 'phone', 'address', 'website', 'default_terms', 'logo', 'brand_color', 'brand_font', 'account_details', 'status'];
 
     public function getLogoUrlAttribute(): ?string
     {

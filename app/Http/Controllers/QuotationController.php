@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Quotation;
+use App\Services\QuotationCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class QuotationController extends Controller
             'client_id'         => 'required|exists:clients,id',
             'currency_id'       => 'required|exists:currencies,id',
             'tax_id'            => 'nullable|exists:taxes,id',
+            'type'              => 'nullable|in:simple,milestone',
             'issue_date'        => 'required|date',
             'expiry_date'       => 'nullable|date|after_or_equal:issue_date',
             'discount_amount'   => 'required|numeric|min:0',
@@ -25,8 +27,17 @@ class QuotationController extends Controller
             'items.*.item_description' => 'nullable|string',
             'items.*.quantity'         => 'required|integer|min:1',
             'items.*.unit_price'       => 'required|numeric|min:0',
+            'items.*.start_date'       => 'nullable|date',
+            'items.*.end_date'         => 'nullable|date',
             'terms_conditions'  => 'nullable|string',
         ]);
+
+        if (($validated['type'] ?? 'simple') === 'milestone') {
+            $request->validate([
+                'items.*.start_date' => 'required|date',
+                'items.*.end_date'   => 'required|date|after_or_equal:items.*.start_date',
+            ]);
+        }
 
         $client = Client::where('id', $validated['client_id'])
             ->where('user_id', auth()->id())
@@ -40,24 +51,7 @@ class QuotationController extends Controller
         }
 
         return DB::transaction(function () use ($validated) {
-            $grossTotal = 0;
-            $itemsData  = [];
-
-            foreach ($validated['items'] as $item) {
-                $subtotal = $item['quantity'] * $item['unit_price'];
-                $grossTotal += $subtotal;
-
-                $itemsData[] = [
-                    'item_title'       => $item['item_title'],
-                    'item_description' => $item['item_description'] ?? null,
-                    'quantity'         => $item['quantity'],
-                    'unit_price'       => $item['unit_price'],
-                    'subtotal'         => $subtotal,
-                ];
-            }
-
-            $taxImpact  = $grossTotal * ($validated['tax_percentage'] / 100);
-            $grandTotal = ($grossTotal + $taxImpact) - $validated['discount_amount'];
+            $calc = QuotationCalculator::calculate($validated['items'], $validated['tax_percentage'], $validated['discount_amount']);
 
             $quoteNumber = 'QT-' . now()->format('Ymd') . '-' . str_pad(
                 Quotation::whereDate('created_at', now()->toDateString())->count() + 1,
@@ -72,15 +66,17 @@ class QuotationController extends Controller
                 'currency_id'       => $validated['currency_id'],
                 'tax_id'            => $validated['tax_id'] ?? null,
                 'quote_number'      => $quoteNumber,
+                'type'              => $validated['type'] ?? 'simple',
                 'issue_date'        => $validated['issue_date'],
                 'expiry_date'       => $validated['expiry_date'] ?? null,
                 'discount_amount'   => $validated['discount_amount'],
                 'tax_percentage'    => $validated['tax_percentage'],
-                'grand_total'       => max(0, $grandTotal),
+                'grand_total'       => $calc['grand_total'],
                 'terms_conditions'  => $validated['terms_conditions'] ?? null,
             ]);
 
-            foreach ($itemsData as $item) {
+            foreach ($calc['items_data'] as $index => $item) {
+                $item['sort_order'] = $index;
                 $quotation->items()->create($item);
             }
 
@@ -90,7 +86,7 @@ class QuotationController extends Controller
                 'data'    => [
                     'quotation_id' => $quotation->id,
                     'quote_number' => $quoteNumber,
-                    'grand_total'  => number_format($grandTotal, 2, '.', ''),
+                    'grand_total'  => number_format($calc['grand_total'], 2, '.', ''),
                 ],
             ], 201);
         });

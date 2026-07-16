@@ -56,13 +56,13 @@ class WebClientController extends Controller
 
     public function edit(Client $client)
     {
-        if ($client->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($client);
         return view('company.clients.edit', compact('client'));
     }
 
     public function update(Request $request, Client $client)
     {
-        if ($client->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($client);
 
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
@@ -80,7 +80,7 @@ class WebClientController extends Controller
 
     public function destroy(Client $client)
     {
-        if ($client->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($client);
         ActivityLog::log('client_deleted', $client, 'Client "' . $client->name . '" deleted');
         $client->delete();
         return redirect('/clients')->with('success', 'Client deleted.');
@@ -106,5 +106,10 @@ class WebClientController extends Controller
             'Content-Type'        => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    private function authorizeOwnership(Client $client): void
+    {
+        $this->authorizeOwnership($client);
     }
 }

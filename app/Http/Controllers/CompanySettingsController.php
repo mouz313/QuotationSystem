@@ -40,9 +40,10 @@ class CompanySettingsController extends Controller
             'address'       => 'nullable|string',
             'website'       => 'nullable|url',
             'default_terms' => 'nullable|string',
-            'brand_color'   => 'nullable|string|max:7',
-            'brand_font'    => 'nullable|string|max:50',
-            'logo'          => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'brand_color'     => 'nullable|string|max:7',
+            'brand_font'      => 'nullable|string|max:50',
+            'account_details' => 'nullable|string|max:5000',
+            'logo'            => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
         if ($request->hasFile('logo')) {

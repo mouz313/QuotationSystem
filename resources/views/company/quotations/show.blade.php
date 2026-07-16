@@ -10,18 +10,10 @@
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl font-bold text-gray-900">{{ $quotation->quote_number }}</h1>
-                    @php
-                        $badge = match($quotation->status) {
-                            'draft' => 'bg-gray-100 text-gray-700',
-                            'sent' => 'bg-blue-100 text-blue-700',
-                            'opened' => 'bg-amber-100 text-amber-700',
-                            'change_requested' => 'bg-purple-100 text-purple-700',
-                            'accepted' => 'bg-emerald-100 text-emerald-700',
-                            'declined' => 'bg-red-100 text-red-700',
-                            default => 'bg-gray-100 text-gray-600',
-                        };
-                    @endphp
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $badge }}">{{ ucfirst(str_replace('_', ' ', $quotation->status)) }}</span>
+                    <x-quotation-status-badge :status="$quotation->status" class="text-xs" />
+                    @if($quotation->isMilestone())
+                    <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-violet-100 text-violet-700">Milestone</span>
+                    @endif
                 </div>
                 <p class="text-sm text-gray-500 mt-0.5">Issued {{ $quotation->issue_date->format('M d, Y') }} · Expires {{ $quotation->expiry_date?->format('M d, Y') ?? 'N/A' }}</p>
             </div>
@@ -100,16 +92,24 @@
                         <tr class="text-left text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100">
                             <th class="pb-3 font-semibold">Item</th>
                             <th class="pb-3 font-semibold">Description</th>
+                            @if($quotation->isMilestone())
+                            <th class="pb-3 font-semibold">Start</th>
+                            <th class="pb-3 font-semibold">End</th>
+                            @endif
                             <th class="pb-3 font-semibold text-right">Qty</th>
                             <th class="pb-3 font-semibold text-right">Price</th>
                             <th class="pb-3 font-semibold text-right">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($quotation->items as $item)
+                        @foreach($quotation->items()->orderBy('sort_order')->get() as $item)
                         <tr class="border-b border-gray-50 last:border-0">
                             <td class="py-3.5 font-medium text-gray-900">{{ $item->item_title }}</td>
                             <td class="py-3.5 text-gray-500">{{ $item->item_description ?? '-' }}</td>
+                            @if($quotation->isMilestone())
+                            <td class="py-3.5 text-gray-700 text-xs">{{ $item->start_date?->format('d M Y') ?? '-' }}</td>
+                            <td class="py-3.5 text-gray-700 text-xs">{{ $item->end_date?->format('d M Y') ?? '-' }}</td>
+                            @endif
                             <td class="py-3.5 text-right text-gray-700">{{ $item->quantity }}</td>
                             <td class="py-3.5 text-right text-gray-700">{{ $quotation->currency_symbol }}{{ number_format($item->unit_price, 2) }}</td>
                             <td class="py-3.5 text-right font-medium text-gray-900">{{ $quotation->currency_symbol }}{{ number_format($item->subtotal, 2) }}</td>
@@ -143,6 +143,62 @@
                 @endif
             </div>
         </div>
+
+        @if($quotation->isMilestone())
+        @php $progress = $quotation->milestone_progress; @endphp
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <h3 class="text-sm font-semibold text-gray-800">Milestone Progress</h3>
+                </div>
+                <span class="text-xs font-medium text-gray-500">{{ $progress['completed'] }}/{{ $progress['total'] }} completed</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2.5 mb-5">
+                <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: {{ $progress['percent'] }}%"></div>
+            </div>
+            <div class="space-y-3">
+                @foreach($quotation->items()->orderBy('sort_order')->get() as $item)
+                @php
+                    $itemPaid = $item->paid_amount;
+                    $itemRemaining = max(0, $item->subtotal - $itemPaid);
+                    $itemFullyPaid = $itemPaid >= $item->subtotal;
+                    $itemPercent = $item->subtotal > 0 ? min(100, round(($itemPaid / $item->subtotal) * 100)) : 0;
+                @endphp
+                <div class="p-4 rounded-xl border {{ $itemFullyPaid ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50' }}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            @if($itemFullyPaid)
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            @else
+                                <div class="w-4 h-4 rounded-full border-2 border-gray-300"></div>
+                            @endif
+                            <span class="text-sm font-semibold {{ $itemFullyPaid ? 'text-emerald-800' : 'text-gray-800' }}">{{ $item->item_title }}</span>
+                        </div>
+                        <span class="text-xs {{ $itemFullyPaid ? 'text-emerald-600' : 'text-gray-500' }}">{{ $itemFullyPaid ? 'Paid' : $itemPercent . '%' }}</span>
+                    </div>
+                    @if($item->start_date && $item->end_date)
+                    <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
+                        <span>{{ $item->start_date->format('d M Y') }} - {{ $item->end_date->format('d M Y') }}</span>
+                        <span class="text-gray-300">|</span>
+                        <span>{{ $item->duration_days }} days</span>
+                    </div>
+                    @endif
+                    <div class="w-full bg-white rounded-full h-1.5 mb-2">
+                        <div class="h-1.5 rounded-full transition-all {{ $itemFullyPaid ? 'bg-emerald-500' : 'bg-indigo-400' }}" style="width: {{ $itemPercent }}%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Paid: {{ $quotation->currency_symbol }}{{ number_format($itemPaid, 2) }}</span>
+                        <span class="{{ $itemFullyPaid ? 'text-emerald-600' : 'text-gray-700' }}">Total: {{ $quotation->currency_symbol }}{{ number_format($item->subtotal, 2) }}</span>
+                    </div>
+                    @if($itemRemaining > 0)
+                    <div class="text-xs text-red-500 mt-1">Remaining: {{ $quotation->currency_symbol }}{{ number_format($itemRemaining, 2) }}</div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         <div class="bg-white rounded-xl border border-gray-200 p-6">
             <div class="flex items-center gap-2 mb-4">
@@ -256,6 +312,9 @@
                         <span class="text-xs text-gray-400">{{ $p->created_at->format('d M Y g:i A') }}</span>
                     </div>
                     <div class="text-xs text-gray-500 mb-2">by {{ $p->clientUser->name }}</div>
+                    @if($p->quotationItem)
+                    <div class="text-xs text-indigo-600 mb-2 font-medium">Milestone: {{ $p->quotationItem->item_title }}</div>
+                    @endif
                     @if($p->notes)<p class="text-sm text-gray-600 mb-3 bg-gray-50 p-2.5 rounded-lg">{{ $p->notes }}</p>@endif
                     <div class="flex items-center gap-2">
                         @if($p->proof)
@@ -296,6 +355,7 @@
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-gray-900">{{ $quotation->currency_symbol }}{{ number_format($p->amount, 2) }}</span>
                         <span class="text-xs text-gray-500">{{ $p->clientUser->name }}</span>
+                        @if($p->quotationItem)<span class="text-xs text-indigo-600 font-medium">({{ $p->quotationItem->item_title }})</span>@endif
                         @if($p->proof)<a href="/storage/{{ $p->proof }}" target="_blank" class="text-indigo-600 hover:underline text-xs">Proof</a>@endif
                     </div>
                     <div class="flex items-center gap-2">

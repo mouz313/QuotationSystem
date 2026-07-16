@@ -71,6 +71,27 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="mt-5 pt-5 border-t border-gray-100">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Quotation Type <span class="text-red-500">*</span></label>
+                            <div class="flex gap-3">
+                                <label class="flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all {{ old('type', 'simple') === 'simple' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300' }}" id="typeSimpleLabel">
+                                    <input type="radio" name="type" value="simple" {{ old('type', 'simple') === 'simple' ? 'checked' : '' }} onchange="toggleType(this.value)" class="text-indigo-600 focus:ring-indigo-500">
+                                    <div>
+                                        <div class="text-sm font-semibold">Simple</div>
+                                        <div class="text-xs opacity-70">Standard line items</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all {{ old('type') === 'milestone' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300' }}" id="typeMilestoneLabel">
+                                    <input type="radio" name="type" value="milestone" {{ old('type') === 'milestone' ? 'checked' : '' }} onchange="toggleType(this.value)" class="text-indigo-600 focus:ring-indigo-500">
+                                    <div>
+                                        <div class="text-sm font-semibold">Milestone</div>
+                                        <div class="text-xs opacity-70">Date-based payment milestones</div>
+                                    </div>
+                                </label>
+                            </div>
+                            <input type="hidden" name="type" id="typeHidden" value="{{ old('type', 'simple') }}">
+                        </div>
                     </div>
                 </div>
 
@@ -83,8 +104,8 @@
                                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                                 </div>
                                 <div>
-                                    <h2 class="text-lg font-semibold text-white">Line Items</h2>
-                                    <p class="text-emerald-200 text-xs">Products or services to include</p>
+                                    <h2 class="text-lg font-semibold text-white" id="itemsSectionTitle">Line Items</h2>
+                                    <p class="text-emerald-200 text-xs" id="itemsSectionDesc">Products or services to include</p>
                                 </div>
                             </div>
                             <div>
@@ -159,6 +180,16 @@
                                         </button>
                                     </div>
                                 </div>
+                                <div class="milestone-dates hidden grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Start Date *</label>
+                                        <input type="date" name="items[0][start_date]" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">End Date *</label>
+                                        <input type="date" name="items[0][end_date]" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -187,7 +218,7 @@
                     </div>
                     <div class="px-6 pb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Payment Instructions</label>
-                        <textarea name="payment_instructions" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Bank: ...&#10;Account: ...&#10;Reference: Quote #">{{ old('payment_instructions') }}</textarea>
+                        <textarea name="payment_instructions" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Payment due within 14 days...&#10;Reference: Quote #">{{ old('payment_instructions') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -287,6 +318,22 @@
 <script>
 let rowIndex = 1;
 
+function toggleType(value) {
+    document.getElementById('typeHidden').value = value;
+    const isMilestone = value === 'milestone';
+    document.querySelectorAll('.milestone-dates').forEach(el => {
+        el.classList.toggle('hidden', !isMilestone);
+        el.querySelectorAll('input').forEach(input => {
+            if (isMilestone) input.setAttribute('required', 'required');
+            else input.removeAttribute('required');
+        });
+    });
+    document.getElementById('typeSimpleLabel').className = `flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all ${!isMilestone ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`;
+    document.getElementById('typeMilestoneLabel').className = `flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all ${isMilestone ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`;
+    document.getElementById('itemsSectionTitle').textContent = isMilestone ? 'Milestones' : 'Line Items';
+    document.getElementById('itemsSectionDesc').textContent = isMilestone ? 'Define milestones with date ranges and payments' : 'Products or services to include';
+}
+
 function addFromSavedItem(data) {
     addRow();
     const rows = document.querySelectorAll('.item-row');
@@ -310,6 +357,7 @@ function fmt(val) {
 function addRow() {
     const container = document.getElementById('items-container');
     const i = rowIndex;
+    const isMilestone = document.getElementById('typeHidden').value === 'milestone';
     const html = `<div class="item-row bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-100 transition-all hover:border-gray-200">
         <div class="grid grid-cols-12 gap-2 items-end">
             <div class="col-span-12 md:col-span-4">
@@ -336,6 +384,16 @@ function addRow() {
                 <button type="button" onclick="this.closest('.item-row').remove(); recalc()" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
+            </div>
+        </div>
+        <div class="milestone-dates ${isMilestone ? '' : 'hidden'} grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Start Date *</label>
+                <input type="date" name="items[${i}][start_date]" ${isMilestone ? 'required' : ''} class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">End Date *</label>
+                <input type="date" name="items[${i}][end_date]" ${isMilestone ? 'required' : ''} class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
         </div>
     </div>`;

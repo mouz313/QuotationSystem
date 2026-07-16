@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Client\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClientUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
@@ -20,12 +22,19 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::guard('client')->attempt($credentials, $request->filled('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended('/client/dashboard');
+        $clientUser = ClientUser::where('email', $credentials['email'])->first();
+
+        if (!$clientUser || !Hash::check($credentials['password'], $clientUser->password)) {
+            return back()->withErrors(['email' => 'Invalid email or password.'])->onlyInput('email');
         }
 
-        return back()->withErrors(['email' => 'Invalid email or password.'])->onlyInput('email');
+        if (!$clientUser->is_active) {
+            return back()->withErrors(['email' => 'Your account has been deactivated. Contact the company for assistance.'])->onlyInput('email');
+        }
+
+        Auth::guard('client')->login($clientUser, $request->filled('remember'));
+        $request->session()->regenerate();
+        return redirect()->intended('/client/dashboard');
     }
 
     public function logout(Request $request)

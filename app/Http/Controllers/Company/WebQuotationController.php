@@ -19,6 +19,7 @@ use App\Models\QuotationNote;
 use App\Models\QuotationRevision;
 use App\Models\QuotationStatusLog;
 use App\Models\Tax;
+use App\Services\QuotationCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,8 +64,9 @@ class WebQuotationController extends Controller
         $items         = Item::where('user_id', $request->user()->id)->get();
         $defaultTerms  = $request->user()->company?->default_terms;
         $defaultCurrency = Currency::where('is_default', true)->first();
+        $accountDetails = $request->user()->company?->account_details;
 
-        return view('company.quotations.create', compact('clients', 'currencies', 'taxes', 'items', 'defaultTerms', 'defaultCurrency'));
+        return view('company.quotations.create', compact('clients', 'currencies', 'taxes', 'items', 'defaultTerms', 'defaultCurrency', 'accountDetails'));
     }
 
     public function store(Request $request)
@@ -78,6 +80,7 @@ class WebQuotationController extends Controller
             'client_id'         => 'required|exists:clients,id',
             'currency_id'       => 'required|exists:currencies,id',
             'tax_id'            => 'nullable|exists:taxes,id',
+            'type'              => 'required|in:simple,milestone',
             'issue_date'        => 'required|date',
             'expiry_date'       => 'nullable|date|after_or_equal:issue_date',
             'discount_amount'   => 'required|numeric|min:0',
@@ -87,9 +90,18 @@ class WebQuotationController extends Controller
             'items.*.item_description' => 'nullable|string',
             'items.*.quantity'         => 'required|integer|min:1',
             'items.*.unit_price'       => 'required|numeric|min:0',
+            'items.*.start_date'       => 'nullable|date',
+            'items.*.end_date'         => 'nullable|date',
             'terms_conditions'     => 'nullable|string',
             'payment_instructions' => 'nullable|string|max:2000',
         ]);
+
+        if ($validated['type'] === 'milestone') {
+            $request->validate([
+                'items.*.start_date' => 'required|date',
+                'items.*.end_date'   => 'required|date|after_or_equal:items.*.start_date',
+            ]);
+        }
 
         $client = Client::where('id', $validated['client_id'])
             ->where('user_id', $request->user()->id)
@@ -100,23 +112,7 @@ class WebQuotationController extends Controller
         }
 
         $quotation = DB::transaction(function () use ($validated, $request) {
-            $grossTotal = 0;
-            $itemsData = [];
-
-            foreach ($validated['items'] as $item) {
-                $subtotal = $item['quantity'] * $item['unit_price'];
-                $grossTotal += $subtotal;
-                $itemsData[] = [
-                    'item_title'       => $item['item_title'],
-                    'item_description' => $item['item_description'] ?? null,
-                    'quantity'         => $item['quantity'],
-                    'unit_price'       => $item['unit_price'],
-                    'subtotal'         => $subtotal,
-                ];
-            }
-
-            $taxImpact  = $grossTotal * ($validated['tax_percentage'] / 100);
-            $grandTotal = ($grossTotal + $taxImpact) - $validated['discount_amount'];
+            $calc = QuotationCalculator::calculate($validated['items'], $validated['tax_percentage'], $validated['discount_amount']);
 
             $todayCount = Quotation::whereDate('created_at', now()->toDateString())->lockForUpdate()->count();
             $quoteNumber = 'QT-' . now()->format('Ymd') . '-' . str_pad($todayCount + 1, 4, '0', STR_PAD_LEFT);
@@ -127,16 +123,18 @@ class WebQuotationController extends Controller
                 'currency_id'      => $validated['currency_id'],
                 'tax_id'           => $validated['tax_id'] ?? null,
                 'quote_number'     => $quoteNumber,
+                'type'             => $validated['type'],
                 'issue_date'       => $validated['issue_date'],
                 'expiry_date'      => $validated['expiry_date'] ?? null,
                 'discount_amount'  => $validated['discount_amount'],
                 'tax_percentage'   => $validated['tax_percentage'],
-                'grand_total'      => max(0, $grandTotal),
+                'grand_total'      => $calc['grand_total'],
                 'terms_conditions'     => $validated['terms_conditions'] ?? null,
                 'payment_instructions' => $validated['payment_instructions'] ?? null,
             ]);
 
-            foreach ($itemsData as $item) {
+            foreach ($calc['items_data'] as $index => $item) {
+                $item['sort_order'] = $index;
                 $quotation->items()->create($item);
             }
 
@@ -150,14 +148,14 @@ class WebQuotationController extends Controller
 
     public function show(Quotation $quotation)
     {
-        if ($quotation->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         $quotation->load(['client', 'items', 'currency', 'tax', 'notes.user', 'activityLogs.user', 'statusLogs', 'revisions', 'payments.clientUser', 'payments.reviewer']);
         return view('company.quotations.show', compact('quotation'));
     }
 
     public function edit(Quotation $quotation)
     {
-        if ($quotation->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         if (!in_array($quotation->status, ['draft', 'change_requested'])) {
             return back()->with('error', 'Only draft or change-requested quotations can be edited.');
         }
@@ -173,7 +171,7 @@ class WebQuotationController extends Controller
 
     public function update(Request $request, Quotation $quotation)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         if (!in_array($quotation->status, ['draft', 'change_requested'])) {
             return back()->with('error', 'Only draft or change-requested quotations can be updated.');
         }
@@ -182,6 +180,7 @@ class WebQuotationController extends Controller
             'client_id'         => 'required|exists:clients,id',
             'currency_id'       => 'required|exists:currencies,id',
             'tax_id'            => 'nullable|exists:taxes,id',
+            'type'              => 'required|in:simple,milestone',
             'issue_date'        => 'required|date',
             'expiry_date'       => 'nullable|date|after_or_equal:issue_date',
             'discount_amount'   => 'required|numeric|min:0',
@@ -191,28 +190,21 @@ class WebQuotationController extends Controller
             'items.*.item_description' => 'nullable|string',
             'items.*.quantity'         => 'required|integer|min:1',
             'items.*.unit_price'       => 'required|numeric|min:0',
+            'items.*.start_date'       => 'nullable|date',
+            'items.*.end_date'         => 'nullable|date',
             'terms_conditions'     => 'nullable|string',
             'payment_instructions' => 'nullable|string|max:2000',
         ]);
 
+        if ($validated['type'] === 'milestone') {
+            $request->validate([
+                'items.*.start_date' => 'required|date',
+                'items.*.end_date'   => 'required|date|after_or_equal:items.*.start_date',
+            ]);
+        }
+
         DB::transaction(function () use ($validated, $request, $quotation) {
-            $grossTotal = 0;
-            $itemsData = [];
-
-            foreach ($validated['items'] as $item) {
-                $subtotal = $item['quantity'] * $item['unit_price'];
-                $grossTotal += $subtotal;
-                $itemsData[] = [
-                    'item_title'       => $item['item_title'],
-                    'item_description' => $item['item_description'] ?? null,
-                    'quantity'         => $item['quantity'],
-                    'unit_price'       => $item['unit_price'],
-                    'subtotal'         => $subtotal,
-                ];
-            }
-
-            $taxImpact  = $grossTotal * ($validated['tax_percentage'] / 100);
-            $grandTotal = ($grossTotal + $taxImpact) - $validated['discount_amount'];
+            $calc = QuotationCalculator::calculate($validated['items'], $validated['tax_percentage'], $validated['discount_amount']);
 
             $wasChangeRequested = $quotation->status === 'change_requested';
 
@@ -234,11 +226,12 @@ class WebQuotationController extends Controller
                 'client_id'        => $validated['client_id'],
                 'currency_id'      => $validated['currency_id'],
                 'tax_id'           => $validated['tax_id'] ?? null,
+                'type'             => $validated['type'],
                 'issue_date'       => $validated['issue_date'],
                 'expiry_date'      => $validated['expiry_date'] ?? null,
                 'discount_amount'  => $validated['discount_amount'],
                 'tax_percentage'   => $validated['tax_percentage'],
-                'grand_total'      => max(0, $grandTotal),
+                'grand_total'      => $calc['grand_total'],
                 'terms_conditions'     => $validated['terms_conditions'] ?? null,
                 'payment_instructions' => $validated['payment_instructions'] ?? null,
                 'status'               => $wasChangeRequested ? 'sent' : $quotation->status,
@@ -247,7 +240,8 @@ class WebQuotationController extends Controller
             ActivityLog::log('quotation_updated', $quotation, 'Quotation "' . $quotation->quote_number . '" updated');
 
             $quotation->items()->delete();
-            foreach ($itemsData as $item) {
+            foreach ($calc['items_data'] as $index => $item) {
+                $item['sort_order'] = $index;
                 $quotation->items()->create($item);
             }
 
@@ -268,7 +262,9 @@ class WebQuotationController extends Controller
                                 'client',
                             )
                         );
-                    } catch (\Exception $e) {}
+                    } catch (\Exception $e) {
+                        \Log::warning('Email failed (amendment notification): ' . $e->getMessage());
+                    }
                 }
             }
         });
@@ -278,7 +274,7 @@ class WebQuotationController extends Controller
 
     public function clone(Quotation $quotation)
     {
-        if ($quotation->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
 
         $newQuotation = DB::transaction(function () use ($quotation) {
             $clone = Quotation::create([
@@ -287,6 +283,7 @@ class WebQuotationController extends Controller
                 'currency_id'      => $quotation->currency_id,
                 'tax_id'           => $quotation->tax_id,
                 'quote_number'     => $quotation->quote_number . '-COPY',
+                'type'             => $quotation->type,
                 'issue_date'       => now()->toDateString(),
                 'expiry_date'      => null,
                 'discount_amount'  => $quotation->discount_amount,
@@ -296,8 +293,8 @@ class WebQuotationController extends Controller
                 'status'           => 'draft',
             ]);
 
-            foreach ($quotation->items as $item) {
-                $clone->items()->create($item->only(['item_title', 'item_description', 'quantity', 'unit_price', 'subtotal']));
+            foreach ($quotation->items()->orderBy('sort_order')->get() as $item) {
+                $clone->items()->create($item->only(['item_title', 'item_description', 'quantity', 'unit_price', 'subtotal', 'start_date', 'end_date', 'sort_order']));
             }
 
             return $clone;
@@ -311,7 +308,7 @@ class WebQuotationController extends Controller
 
     public function sendEmail(Quotation $quotation)
     {
-        if ($quotation->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
 
         set_time_limit(30);
         ini_set('default_socket_timeout', 10);
@@ -337,7 +334,7 @@ class WebQuotationController extends Controller
                     $clientUser->companies()->syncWithoutDetaching([$quotation->user->company->id]);
                 }
 
-                Mail::to($client->email)->send(new ClientWelcomeMail($clientUser, $tempPassword, $quotation->quote_number));
+                Mail::to($client->email)->send(new ClientWelcomeMail($clientUser, $tempPassword, $quotation->quote_number, $quotation->user->company));
                 $isNewClientUser = true;
             } else {
                 if ($quotation->user->company) {
@@ -372,7 +369,7 @@ class WebQuotationController extends Controller
 
     public function amend(Request $request, Quotation $quotation)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         if ($quotation->status !== 'change_requested') {
             return back()->with('error', 'Only change-requested quotations can be amended.');
         }
@@ -382,14 +379,14 @@ class WebQuotationController extends Controller
 
     public function preview(Quotation $quotation)
     {
-        if ($quotation->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         $quotation->load(['client', 'items', 'currency', 'tax', 'user.company']);
         return view('company.quotations.preview', compact('quotation'));
     }
 
     public function pdf(Quotation $quotation)
     {
-        if ($quotation->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         $quotation->load(['client', 'items', 'currency', 'tax', 'user.company']);
 
         $company = $quotation->user->company;
@@ -400,7 +397,7 @@ class WebQuotationController extends Controller
 
     public function updateStatus(Request $request, Quotation $quotation)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
 
         $validated = $request->validate(['status' => 'required|in:sent,accepted,declined']);
         $oldStatus = $quotation->status;
@@ -422,7 +419,9 @@ class WebQuotationController extends Controller
                         'client',
                     )
                 );
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                \Log::warning('Email failed (status change notification): ' . $e->getMessage());
+            }
         }
 
         Notification::create([
@@ -437,7 +436,7 @@ class WebQuotationController extends Controller
 
     public function updatePayment(Request $request, Quotation $quotation)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
 
         $validated = $request->validate([
             'payment_status' => 'required|in:unpaid,partial,paid',
@@ -472,7 +471,9 @@ class WebQuotationController extends Controller
                         'client',
                     )
                 );
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                \Log::warning('Email failed (payment status notification): ' . $e->getMessage());
+            }
         }
 
         return back()->with('success', "Payment status updated to {$validated['payment_status']}.");
@@ -480,7 +481,7 @@ class WebQuotationController extends Controller
 
     public function approvePayment(Request $request, Quotation $quotation, Payment $payment)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         if ($payment->quotation_id !== $quotation->id) abort(404);
 
         $payment->update([
@@ -490,7 +491,20 @@ class WebQuotationController extends Controller
         ]);
 
         $totalPaid = $quotation->payments()->where('status', 'approved')->sum('amount');
-        $paymentStatus = $totalPaid >= $quotation->grand_total ? 'paid' : 'partial';
+
+        if ($quotation->isMilestone()) {
+            $allMilestonesPaid = true;
+            foreach ($quotation->items()->get() as $item) {
+                $itemPaid = $item->payments()->where('status', 'approved')->sum('amount');
+                if ($itemPaid < $item->subtotal) {
+                    $allMilestonesPaid = false;
+                    break;
+                }
+            }
+            $paymentStatus = $allMilestonesPaid ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid');
+        } else {
+            $paymentStatus = $totalPaid >= $quotation->grand_total ? 'paid' : 'partial';
+        }
 
         $quotation->update([
             'payment_status' => $paymentStatus,
@@ -504,7 +518,9 @@ class WebQuotationController extends Controller
                 Mail::to($clientEmail)->send(
                     new PaymentReviewedMail($quotation, $payment, $request->user()->name)
                 );
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                \Log::warning('Email failed (payment approved notification): ' . $e->getMessage());
+            }
         }
 
         Notification::create([
@@ -519,7 +535,7 @@ class WebQuotationController extends Controller
 
     public function rejectPayment(Request $request, Quotation $quotation, Payment $payment)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
         if ($payment->quotation_id !== $quotation->id) abort(404);
 
         $request->validate(['rejection_reason' => 'nullable|string|max:500']);
@@ -537,7 +553,9 @@ class WebQuotationController extends Controller
                 Mail::to($clientEmail)->send(
                     new PaymentReviewedMail($quotation, $payment, $request->user()->name)
                 );
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                \Log::warning('Email failed (payment rejected notification): ' . $e->getMessage());
+            }
         }
 
         Notification::create([
@@ -552,7 +570,7 @@ class WebQuotationController extends Controller
 
     public function updatePaymentInstructions(Request $request, Quotation $quotation)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
 
         $validated = $request->validate([
             'payment_instructions' => 'nullable|string|max:2000',
@@ -565,7 +583,7 @@ class WebQuotationController extends Controller
 
     public function addNote(Request $request, Quotation $quotation)
     {
-        if ($quotation->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($quotation);
 
         $validated = $request->validate(['note' => 'required|string|max:1000']);
 
@@ -638,5 +656,12 @@ class WebQuotationController extends Controller
             'changed_by_id'   => $changedBy->id,
             'notes'           => $notes,
         ]);
+    }
+
+    private function authorizeOwnership(Quotation $quotation): void
+    {
+        if ($quotation->user_id !== request()->user()->id) {
+            abort(403, 'Unauthorized.');
+        }
     }
 }

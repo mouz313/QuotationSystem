@@ -11,6 +11,7 @@
         <div class="border-b border-gray-200">
             <nav class="flex" role="tablist">
                 <button type="button" role="tab" onclick="switchTab('general')" id="tab-general" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600">General</button>
+                <button type="button" role="tab" onclick="switchTab('account')" id="tab-account" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">Account Details</button>
                 <button type="button" role="tab" onclick="switchTab('subscription')" id="tab-subscription" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">Subscription</button>
                 <button type="button" role="tab" onclick="switchTab('details')" id="tab-details" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">Details</button>
             </nav>
@@ -94,6 +95,24 @@
                     </div>
                 </div>
                 <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Save Changes</button>
+            </form>
+        </div>
+
+        <div id="tab-content-account" class="tab-content p-6 hidden">
+            <form method="POST" action="/company/settings" class="space-y-4">
+                @csrf @method('PUT')
+                <input type="hidden" name="name" value="{{ $company->name }}">
+                <input type="hidden" name="email" value="{{ $company->email }}">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Account / Bank Details</h3>
+                    <p class="text-xs text-gray-400 mb-3">This information will be displayed on your quotations and PDFs for client payments.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Details</label>
+                    <p class="text-xs text-gray-400 mb-2">Enter your bank name, account holder, account number, IBAN, SWIFT/BIC, or any other payment details you want clients to see.</p>
+                    <textarea name="account_details" rows="8" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-mono leading-relaxed" placeholder="Bank Name: XYZ Bank&#10;Account Holder: Your Company LLC&#10;Account Number: 1234567890&#10;IBAN: PK1234567890123456789012&#10;SWIFT/BIC: XYZBPKKA&#10;Branch: Main Branch">{{ old('account_details', $company->account_details) }}</textarea>
+                </div>
+                <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Save Account Details</button>
             </form>
         </div>
 

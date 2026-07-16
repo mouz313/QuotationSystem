@@ -22,8 +22,9 @@ class WebItemController extends Controller
         }
 
         $items = $items->latest()->paginate(15)->withQueryString();
+        $defaultCurrency = \App\Models\Currency::where('is_default', true)->first();
 
-        return view('company.items.index', compact('items'));
+        return view('company.items.index', compact('items', 'defaultCurrency'));
     }
 
     public function create()
@@ -48,7 +49,7 @@ class WebItemController extends Controller
 
     public function edit(Item $item)
     {
-        if ($item->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($item);
         return view('company.items.edit', compact('item'));
     }
 
@@ -71,9 +72,14 @@ class WebItemController extends Controller
 
     public function destroy(Item $item)
     {
-        if ($item->user_id !== request()->user()->id) abort(403);
+        $this->authorizeOwnership($item);
         ActivityLog::log('item_deleted', $item, 'Item "' . $item->title . '" deleted');
         $item->delete();
         return redirect('/items')->with('success', 'Item deleted.');
+    }
+
+    private function authorizeOwnership(Item $item): void
+    {
+        $this->authorizeOwnership($item);
     }
 }

@@ -40,6 +40,9 @@ class QuotationStatusMail extends Mailable
 
     public function content(): Content
     {
+        $this->quotation->load('user.company');
+        $company = $this->quotation->user->company;
+
         return new Content(
             view: 'emails.quotation-status',
             with: [
@@ -52,6 +55,8 @@ class QuotationStatusMail extends Mailable
                 'grandTotal'   => number_format($this->quotation->grand_total, 2),
                 'currency'     => $this->quotation->currency_symbol,
                 'clientName'   => $this->quotation->client->name,
+                'company'      => $company,
+                'brandColor'   => $company->brand_color ?? '#4f46e5',
             ],
         );
     }

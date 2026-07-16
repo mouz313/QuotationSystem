@@ -30,6 +30,9 @@ class PaymentSubmittedMail extends Mailable
 
     public function content(): Content
     {
+        $this->quotation->load('user.company');
+        $company = $this->quotation->user->company;
+
         return new Content(
             view: 'emails.payment-submitted',
             with: [
@@ -40,6 +43,8 @@ class PaymentSubmittedMail extends Mailable
                 'clientEmail' => $this->clientUser->email,
                 'notes'       => $this->payment->notes,
                 'grandTotal'  => number_format($this->quotation->grand_total, 2),
+                'company'     => $company,
+                'brandColor'  => $company->brand_color ?? '#4f46e5',
             ],
         );
     }

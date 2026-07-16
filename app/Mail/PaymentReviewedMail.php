@@ -30,7 +30,10 @@ class PaymentReviewedMail extends Mailable
 
     public function content(): Content
     {
+        $this->quotation->load('user.company');
+        $company = $this->quotation->user->company;
         $status = $this->payment->status === 'approved' ? 'Approved' : 'Rejected';
+
         return new Content(
             view: 'emails.payment-reviewed',
             with: [
@@ -42,6 +45,8 @@ class PaymentReviewedMail extends Mailable
                 'reviewerNotes' => $this->payment->notes,
                 'grandTotal'   => number_format($this->quotation->grand_total, 2),
                 'totalPaid'    => number_format($this->quotation->paid_amount ?? 0, 2),
+                'company'      => $company,
+                'brandColor'   => $company->brand_color ?? '#4f46e5',
             ],
         );
     }

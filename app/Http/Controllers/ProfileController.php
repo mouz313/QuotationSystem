@@ -49,6 +49,7 @@ class ProfileController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        $request->session()->regenerate();
         return back()->with('success', 'Password changed successfully.');
     }
 }

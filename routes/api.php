@@ -6,12 +6,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Company\UserController;
 use Illuminate\Support\Facades\Route;
 
-// ── Auth (Public) ──
-Route::post('/v1/register', [AuthController::class, 'register']);
-Route::post('/v1/login', [AuthController::class, 'login']);
+// ── Auth (Public, throttled) ──
+Route::middleware('throttle:api')->group(function () {
+    Route::post('/v1/register', [AuthController::class, 'register']);
+    Route::post('/v1/login', [AuthController::class, 'login']);
+});
 
 // ── Auth (Protected) ──
-Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:api'])->prefix('v1')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
@@ -36,10 +38,10 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 
     // ── Company Admin: User Management ──
     Route::middleware(['company.admin', 'company.active'])->prefix('company')->group(function () {
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::get('/users/{user}', [UserController::class, 'show']);
-        Route::put('/users/{user}', [UserController::class, 'update']);
-        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        Route::get('/users', [UserController::class, 'apiIndex']);
+        Route::post('/users', [UserController::class, 'apiStore']);
+        Route::get('/users/{user}', [UserController::class, 'apiShow']);
+        Route::put('/users/{user}', [UserController::class, 'apiUpdate']);
+        Route::delete('/users/{user}', [UserController::class, 'apiDestroy']);
     });
 });

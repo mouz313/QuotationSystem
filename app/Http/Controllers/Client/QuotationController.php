@@ -55,7 +55,9 @@ class QuotationController extends Controller
                         'company',
                     )
                 );
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                \Log::warning('Email failed (opened status notification): ' . $e->getMessage());
+            }
         }
 
         return view('client.quotations.show', compact('quotation'));
@@ -89,10 +91,26 @@ class QuotationController extends Controller
         }
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-            'notes'  => 'nullable|string|max:1000',
-            'proof'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'quotation_item_id' => 'nullable|exists:quotation_items,id',
+            'amount'            => 'required|numeric|min:0.01',
+            'notes'             => 'nullable|string|max:1000',
+            'proof'             => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
+
+        if ($quotation->isMilestone()) {
+            if (empty($validated['quotation_item_id'])) {
+                return back()->with('error', 'Please select a milestone to pay for.');
+            }
+            $item = $quotation->items()->find($validated['quotation_item_id']);
+            if (!$item) {
+                return back()->with('error', 'Invalid milestone selected.');
+            }
+            $paidAmount = $item->paid_amount;
+            $remaining = max(0, $item->subtotal - $paidAmount);
+            if ($validated['amount'] > $remaining) {
+                return back()->with('error', "Amount exceeds remaining balance of {$quotation->currency_symbol}" . number_format($remaining, 2) . " for this milestone.");
+            }
+        }
 
         $proofPath = null;
         if ($request->hasFile('proof')) {
@@ -100,24 +118,27 @@ class QuotationController extends Controller
         }
 
         $payment = Payment::create([
-            'quotation_id'  => $quotation->id,
-            'client_user_id' => $request->user('client')->id,
-            'amount'        => $validated['amount'],
-            'proof'         => $proofPath,
-            'notes'         => $validated['notes'],
-            'status'        => 'pending',
+            'quotation_id'      => $quotation->id,
+            'quotation_item_id' => $validated['quotation_item_id'] ?? null,
+            'client_user_id'    => $request->user('client')->id,
+            'amount'            => $validated['amount'],
+            'proof'             => $proofPath,
+            'notes'             => $validated['notes'],
+            'status'            => 'pending',
         ]);
 
         try {
             Mail::to($quotation->user->email)->send(
                 new PaymentSubmittedMail($quotation, $payment, $request->user('client'))
             );
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            \Log::warning('Email failed (payment submitted notification): ' . $e->getMessage());
+        }
 
         Notification::create([
             'user_id' => $quotation->user_id,
             'type' => 'payment_submitted',
-            'message' => "{$request->user('client')->name} submitted a payment of {$quotation->currency_symbol}" . number_format($payment->amount, 2) . " for {$quotation->quote_number}.",
+            'message' => "{$request->user('client')->name} submitted a payment of {$quotation->currency_symbol}" . number_format($payment->amount, 2) . " for {$quotation->quote_number}" . ($payment->quotation_item_id ? " (milestone: {$item->item_title})" : '') . ".",
             'url' => "/quotations/{$quotation->id}",
         ]);
 
@@ -167,7 +188,9 @@ class QuotationController extends Controller
                     'company',
                 )
             );
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            \Log::warning('Email failed (status change notification): ' . $e->getMessage());
+        }
 
         Notification::create([
             'user_id' => $quotation->user_id,
