@@ -1,52 +1,69 @@
 @extends('layouts.app')
 @section('title', 'Clients')
 @section('content')
-<div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">Clients</h1>
-        <p class="text-sm text-gray-500">Manage your client list</p>
-    </div>
-    <div class="flex gap-2">
-        <a href="/clients/export" class="px-4 py-2 border text-sm rounded-lg hover:bg-gray-50">Export CSV</a>
-        <a href="/clients/create" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">+ New Client</a>
+
+<x-page-header title="Clients" subtitle="Manage your client list">
+    <x-slot name="actions">
+        <a href="/clients/export" class="btn btn-ghost" style="border:1px solid var(--surface-200);font-size:.8125rem;">Export CSV</a>
+        <a href="/clients/create" class="btn btn-brand" style="font-size:.8125rem;">+ New Client</a>
+    </x-slot>
+</x-page-header>
+
+<x-search-bar action="/clients" placeholder="Search by name, email, or phone..." />
+
+<div class="d-card" style="overflow:hidden;">
+    <div class="overflow-x-auto">
+        <table class="d-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Quotations</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @forelse($clients as $client)
+                <tr>
+                    <td style="font-weight:600;"><a href="/clients/{{ $client->id }}" style="color:var(--brand-600);text-decoration:none;">{{ $client->name }}</a></td>
+                    <td>{{ $client->email }}</td>
+                    <td>{{ $client->phone ?? '-' }}</td>
+                    <td>{{ $client->quotations_count }}</td>
+                    <td>
+                        <div style="display:flex;gap:.25rem;">
+                            <a href="/clients/{{ $client->id }}" class="btn btn-ghost btn-icon" title="View" style="color:var(--brand-600);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </a>
+                            <a href="/clients/{{ $client->id }}/edit" class="btn btn-ghost btn-icon" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </a>
+                            @if(in_array($client->id, $pendingPaymentClientIds ?? []))
+                                <span class="btn btn-icon" style="color:var(--surface-400);cursor:not-allowed;" title="Cannot delete: pending payments">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </span>
+                            @else
+                                <form method="POST" action="/clients/{{ $client->id }}" onsubmit="return confirm('Delete this client?')" style="display:inline;">
+                                    @csrf @method('DELETE')
+                                    <button class="btn btn-icon" title="Delete" style="color:var(--danger-600);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5">
+                        <x-empty-state icon="client" title="{{ request('search') ? 'No clients match your search.' : 'No clients yet.' }}" description="{{ request('search') ? 'Try a different search term.' : 'Add your first client to get started.' }}" action="{{ !request('search') ? '/clients/create' : '' }}" actionLabel="{{ !request('search') ? '+ Add Client' : '' }}" />
+                    </td>
+                </tr>
+            @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
-<form method="GET" action="/clients" class="mb-4">
-    <div class="flex gap-2">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email, or phone..." class="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-        <button class="px-4 py-2 bg-gray-100 text-sm rounded-lg hover:bg-gray-200">Search</button>
-        @if(request('search'))
-            <a href="/clients" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Clear</a>
-        @endif
-    </div>
-</form>
-<div class="bg-white rounded-xl shadow overflow-hidden">
-    <table class="w-full text-sm">
-        <thead><tr class="text-left text-gray-500 bg-gray-50">
-            <th class="px-4 py-3">Name</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Quotations</th><th class="px-4 py-3">Actions</th>
-        </tr></thead>
-        <tbody>
-        @forelse($clients as $client)
-            <tr class="border-t hover:bg-gray-50">
-                <td class="px-4 py-3 font-medium">{{ $client->name }}</td>
-                <td class="px-4 py-3 text-gray-600">{{ $client->email }}</td>
-                <td class="px-4 py-3 text-gray-600">{{ $client->phone ?? '-' }}</td>
-                <td class="px-4 py-3 text-gray-600">{{ $client->quotations_count }}</td>
-                <td class="px-4 py-3">
-                    <div class="flex gap-2">
-                        <a href="/clients/{{ $client->id }}/edit" class="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">Edit</a>
-                        <form method="POST" action="/clients/{{ $client->id }}" onsubmit="return confirm('Delete?')">
-                            @csrf @method('DELETE')
-                            <button class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Delete</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        @empty
-            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">{{ request('search') ? 'No clients match your search.' : 'No clients yet. Add your first client!' }}</td></tr>
-        @endforelse
-        </tbody>
-    </table>
-</div>
-<div class="mt-4">{{ $clients->links() }}</div>
+
+<div style="margin-top:1rem;">{{ $clients->links() }}</div>
 @endsection

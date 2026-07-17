@@ -1,36 +1,25 @@
 @extends('layouts.app')
 @section('title', 'Add Team User')
 @section('content')
-<div class="mb-6"><h1 class="text-2xl font-bold text-gray-800">Add Team User</h1></div>
-<div class="bg-white rounded-xl shadow p-6 max-w-2xl">
-    <form method="POST" action="/company/users" class="space-y-4">
-        @csrf
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-            <input type="text" name="name" value="{{ old('name') }}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none @error('name') border-red-500 @enderror">
-            @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-            <input type="email" name="email" value="{{ old('email') }}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none @error('email') border-red-500 @enderror">
-            @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-            <input type="password" name="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none @error('password') border-red-500 @enderror">
-            @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-            <select name="role" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+
+<x-page-header title="Add Team User" subtitle="Invite a new team member" back="/company/users" />
+
+<x-card class="fade-in" style="max-width:40rem;">
+    <div style="padding:1.5rem;">
+        <form method="POST" action="/company/users" style="display:flex;flex-direction:column;gap:1rem;">
+            @csrf
+            <x-form-input label="Full Name" name="name" required placeholder="Full name" :error="$errors->first('name')" />
+            <x-form-input label="Email" name="email" type="email" required placeholder="email@example.com" :error="$errors->first('email')" />
+            <x-form-input label="Password" name="password" type="password" required placeholder="Minimum 8 characters" :error="$errors->first('password')" />
+            <x-form-select label="Role" name="role" required :error="$errors->first('role')">
                 <option value="staff">Staff</option>
                 <option value="company_admin">Company Admin</option>
-            </select>
-        </div>
-        <div class="flex gap-2 pt-2">
-            <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Add User</button>
-            <a href="/company/users" class="px-4 py-2 border text-sm rounded-lg hover:bg-gray-50">Cancel</a>
-        </div>
-    </form>
-</div>
+            </x-form-select>
+            <div style="display:flex;gap:.5rem;padding-top:.5rem;">
+                <button type="submit" class="btn btn-brand">Add User</button>
+                <a href="/company/users" class="btn btn-ghost" style="border:1px solid var(--surface-200);">Cancel</a>
+            </div>
+        </form>
+    </div>
+</x-card>
 @endsection

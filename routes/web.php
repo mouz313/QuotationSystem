@@ -4,8 +4,10 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\ReportController as AdminReport;
 use App\Http\Controllers\Admin\SystemHealthController as AdminHealth;
 use App\Http\Controllers\Admin\WebActivityLogController as AdminActivity;
+use App\Http\Controllers\Admin\WebAdminRoleController as AdminRole;
 use App\Http\Controllers\Admin\WebAdminUserController as AdminUser;
 use App\Http\Controllers\Admin\WebAdminQuotationController as AdminQuotation;
+use App\Http\Controllers\Admin\WebClientUserController as AdminClientUser;
 use App\Http\Controllers\Admin\WebCompanyController as AdminCompany;
 use App\Http\Controllers\Admin\WebCurrencyController as AdminCurrency;
 use App\Http\Controllers\Admin\WebEmailTemplateController as AdminEmailTemplate;
@@ -106,6 +108,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/users/{user}/edit', [AdminUser::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [AdminUser::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [AdminUser::class, 'destroy'])->name('users.destroy');
+
+        Route::get('/roles', [AdminRole::class, 'index'])->name('roles.index');
+        Route::get('/roles/create', [AdminRole::class, 'create'])->name('roles.create');
+        Route::post('/roles', [AdminRole::class, 'store'])->name('roles.store');
+        Route::get('/roles/{role}/edit', [AdminRole::class, 'edit'])->name('roles.edit');
+        Route::put('/roles/{role}', [AdminRole::class, 'update'])->name('roles.update');
+        Route::delete('/roles/{role}', [AdminRole::class, 'destroy'])->name('roles.destroy');
     });
 
     // Company Users (admin view of all company staff)
@@ -118,6 +127,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('/{user}', [\App\Http\Controllers\Admin\WebCompanyUserController::class, 'destroy'])->name('destroy');
     });
 
+    // Client Portal Users (admin view of all client portal accounts)
+    Route::middleware('permission:companies.manage')->prefix('client-users')->name('client-users.')->group(function () {
+        Route::get('/', [AdminClientUser::class, 'index'])->name('index');
+        Route::get('/{clientUser}', [AdminClientUser::class, 'show'])->name('show');
+        Route::patch('/{clientUser}/status', [AdminClientUser::class, 'updateStatus'])->name('status');
+        Route::delete('/{clientUser}', [AdminClientUser::class, 'destroy'])->name('destroy');
+    });
+
     // Reports & Exports
     Route::middleware('permission:reports.view')->group(function () {
         Route::get('/reports', [AdminReport::class, 'index'])->name('reports.index');
@@ -127,11 +144,29 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Activity Log
     Route::middleware('permission:activity.view')->group(function () {
         Route::get('/activity-log', [AdminActivity::class, 'index'])->name('activity-log.index');
+        Route::get('/activity-log/export', [AdminActivity::class, 'export'])->name('activity-log.export');
     });
+
+    // Admin Notifications
+    Route::get('/notifications', function () {
+        $notifications = auth()->user()->notifications()->latest()->paginate(25);
+        return view('admin.notifications.index', compact('notifications'));
+    })->name('notifications.index');
+    Route::post('/notifications/mark-all-read', function () {
+        auth()->user()->notifications()->where('is_read', false)->update(['is_read' => true]);
+        return back();
+    })->name('notifications.mark-all-read');
+    Route::post('/notifications/{notification}/read', function (\App\Models\Notification $notification) {
+        if ($notification->user_id !== auth()->id()) abort(403);
+        $notification->update(['is_read' => true]);
+        return $notification->url ? redirect($notification->url) : back();
+    })->name('notifications.read');
 
     // System Health
     Route::middleware('permission:health.view')->group(function () {
         Route::get('/health', [AdminHealth::class, 'index'])->name('health.index');
+        Route::post('/health/clear-cache', [AdminHealth::class, 'clearCache'])->name('health.clear-cache');
+        Route::post('/health/truncate-logs', [AdminHealth::class, 'truncateLogs'])->name('health.truncate-logs');
     });
 
     // Pages CMS
@@ -182,14 +217,33 @@ Route::prefix('client')->name('client.')->group(function () {
 
     Route::middleware('auth:client')->group(function () {
         Route::get('/dashboard', [ClientDashboard::class, 'index'])->name('dashboard');
+        Route::get('/quotations', [ClientQuotation::class, 'index'])->name('quotations.index');
         Route::get('/quotations/{quotation}', [ClientQuotation::class, 'show'])->name('quotations.show');
         Route::post('/quotations/{quotation}/accept', [ClientQuotation::class, 'accept'])->name('quotations.accept');
         Route::post('/quotations/{quotation}/decline', [ClientQuotation::class, 'decline'])->name('quotations.decline');
         Route::post('/quotations/{quotation}/request-change', [ClientQuotation::class, 'requestChange'])->name('quotations.request-change');
         Route::post('/quotations/{quotation}/submit-payment', [ClientQuotation::class, 'submitPayment'])->name('quotations.submit-payment');
+        Route::get('/quotations/{quotation}/receipt', [ClientQuotation::class, 'paymentReceipt'])->name('quotations.receipt');
+        Route::get('/quotations/{quotation}/pdf', [ClientQuotation::class, 'pdf'])->name('quotations.pdf');
+        Route::get('/payments', [ClientQuotation::class, 'paymentHistory'])->name('payments.index');
         Route::get('/profile', [ClientProfile::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ClientProfile::class, 'updateProfile'])->name('profile.update');
         Route::put('/profile/password', [ClientProfile::class, 'updatePassword'])->name('profile.password');
+
+        Route::get('/notifications', function () {
+            $notifications = auth('client')->user()->notifications()->latest()->paginate(25);
+            return view('notifications.client-index', compact('notifications'));
+        })->name('notifications.index');
+        Route::post('/notifications/mark-all-read', function () {
+            auth('client')->user()->notifications()->where('is_read', false)->update(['is_read' => true]);
+            return back();
+        })->name('notifications.mark-all-read');
+        Route::post('/notifications/{notification}/read', function (\App\Models\Notification $notification) {
+            $clientUser = auth('client')->user();
+            if ($notification->client_user_id !== $clientUser->id) abort(403);
+            $notification->update(['is_read' => true]);
+            return $notification->url ? redirect($notification->url) : back();
+        })->name('notifications.read');
     });
 });
 
@@ -212,12 +266,28 @@ Route::middleware(['auth', 'company.active'])->group(function () {
         return back();
     })->name('notifications.mark-all-read');
 
+    Route::post('/notifications/{notification}/read', function (\App\Models\Notification $notification) {
+        if ($notification->user_id !== auth()->id()) abort(403);
+        $notification->update(['is_read' => true]);
+        return $notification->url ? redirect($notification->url) : back();
+    })->name('notifications.read');
+
+    Route::get('/notifications', function () {
+        $notifications = auth()->user()->notifications()->latest()->paginate(25);
+        return view('notifications.index', compact('notifications'));
+    })->name('notifications.index');
+
+    Route::get('/activity-log', [CompanyDashboard::class, 'activityLog'])->name('activity.log');
+    Route::get('/reports', [CompanyDashboard::class, 'reports'])->name('reports.index');
+    Route::get('/reports/export', [CompanyDashboard::class, 'exportReport'])->name('reports.export');
+
     // Company-only routes (admin blocked)
     Route::middleware('not.admin')->group(function () {
         // Client routes
         Route::get('/clients', [CompanyClient::class, 'index'])->name('clients.index');
         Route::get('/clients/create', [CompanyClient::class, 'create'])->name('clients.create');
         Route::post('/clients', [CompanyClient::class, 'store'])->name('clients.store');
+        Route::get('/clients/{client}', [CompanyClient::class, 'show'])->name('clients.show');
         Route::get('/clients/{client}/edit', [CompanyClient::class, 'edit'])->name('clients.edit');
         Route::put('/clients/{client}', [CompanyClient::class, 'update'])->name('clients.update');
         Route::delete('/clients/{client}', [CompanyClient::class, 'destroy'])->name('clients.destroy');
@@ -230,6 +300,7 @@ Route::middleware(['auth', 'company.active'])->group(function () {
         Route::get('/items/{item}/edit', [CompanyItem::class, 'edit'])->name('items.edit');
         Route::put('/items/{item}', [CompanyItem::class, 'update'])->name('items.update');
         Route::delete('/items/{item}', [CompanyItem::class, 'destroy'])->name('items.destroy');
+        Route::get('/items/export', [CompanyItem::class, 'exportCsv'])->name('items.export');
 
         // Quotation routes
         Route::get('/quotations', [CompanyQuotation::class, 'index'])->name('quotations.index');
@@ -240,6 +311,7 @@ Route::middleware(['auth', 'company.active'])->group(function () {
         Route::get('/quotations/{quotation}', [CompanyQuotation::class, 'show'])->name('quotations.show');
         Route::get('/quotations/{quotation}/edit', [CompanyQuotation::class, 'edit'])->name('quotations.edit');
         Route::put('/quotations/{quotation}', [CompanyQuotation::class, 'update'])->name('quotations.update');
+        Route::delete('/quotations/{quotation}', [CompanyQuotation::class, 'destroy'])->name('quotations.destroy');
         Route::get('/quotations/{quotation}/pdf', [CompanyQuotation::class, 'pdf'])->name('quotations.pdf');
         Route::get('/quotations/{quotation}/preview', [CompanyQuotation::class, 'preview'])->name('quotations.preview');
         Route::post('/quotations/{quotation}/clone', [CompanyQuotation::class, 'clone'])->name('quotations.clone');
@@ -250,6 +322,9 @@ Route::middleware(['auth', 'company.active'])->group(function () {
         Route::patch('/quotations/{quotation}/payment-instructions', [CompanyQuotation::class, 'updatePaymentInstructions'])->name('quotations.payment-instructions');
         Route::post('/quotations/{quotation}/payments/{payment}/approve', [CompanyQuotation::class, 'approvePayment'])->name('quotations.payments.approve');
         Route::post('/quotations/{quotation}/payments/{payment}/reject', [CompanyQuotation::class, 'rejectPayment'])->name('quotations.payments.reject');
+        Route::post('/quotations/{quotation}/send-reminder', [CompanyQuotation::class, 'sendReminder'])->name('quotations.send-reminder');
+        Route::post('/quotations/{quotation}/payments/bulk-approve', [CompanyQuotation::class, 'bulkApprovePayments'])->name('quotations.payments.bulk-approve');
+        Route::post('/quotations/{quotation}/payments/bulk-reject', [CompanyQuotation::class, 'bulkRejectPayments'])->name('quotations.payments.bulk-reject');
         Route::post('/quotations/{quotation}/notes', [CompanyQuotation::class, 'addNote'])->name('quotations.notes');
 
         // Company user management (company_admin+)

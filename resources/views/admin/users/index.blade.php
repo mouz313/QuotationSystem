@@ -1,47 +1,62 @@
 @extends('layouts.admin')
 @section('title', 'Admin Users')
 @section('content')
-<div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">Admin Users</h1>
-        <p class="text-sm text-gray-500">Manage admin panel access</p>
-    </div>
-    <a href="/admin/users/create" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">+ New Admin User</a>
-</div>
-<div class="bg-white rounded-xl shadow overflow-hidden">
-    <table class="w-full text-sm">
-        <thead><tr class="text-left text-gray-500 bg-gray-50">
-            <th class="px-4 py-3">Name</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Role</th><th class="px-4 py-3">Created</th><th class="px-4 py-3">Actions</th>
-        </tr></thead>
-        <tbody>
-        @forelse($users as $u)
-            <tr class="border-t hover:bg-gray-50">
-                <td class="px-4 py-3 font-medium">{{ $u->name }}</td>
-                <td class="px-4 py-3 text-gray-600">{{ $u->email }}</td>
-                <td class="px-4 py-3">
-                    @if($u->adminRole)
-                        <span class="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700">{{ $u->adminRole->name }}</span>
-                    @else
-                        <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-500">Super Admin</span>
-                    @endif
-                </td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ $u->created_at->format('M d, Y') }}</td>
-                <td class="px-4 py-3">
-                    <div class="flex gap-2">
-                        <a href="/admin/users/{{ $u->id }}/edit" class="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">Edit</a>
-                        @if($u->id !== auth()->id())
-                            <form method="POST" action="/admin/users/{{ $u->id }}" onsubmit="return confirm('Delete this admin user?')">
-                                @csrf @method('DELETE')
-                                <button class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Delete</button>
-                            </form>
+<div class="fade-in">
+    <x-page-header title="Admin Users" subtitle="Manage admin panel access">
+        <x-slot name="actions">
+            <a href="/admin/users/create" class="btn btn-brand btn-sm">+ New Admin User</a>
+        </x-slot>
+    </x-page-header>
+
+    <div class="d-card" style="overflow:hidden;">
+        <table class="d-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @forelse($users as $u)
+                <tr>
+                    <td style="font-weight:600;">{{ $u->name }}</td>
+                    <td>{{ $u->email }}</td>
+                    <td>
+                        @if($u->adminRole)
+                            <span class="badge badge-sent">{{ $u->adminRole->name }}</span>
+                        @else
+                            <span class="badge badge-draft">Super Admin</span>
                         @endif
-                    </div>
-                </td>
-            </tr>
-        @empty
-            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">No admin users.</td></tr>
-        @endforelse
-        </tbody>
-    </table>
+                    </td>
+                    <td style="font-size:.75rem;color:var(--surface-400);">{{ $u->created_at->format('M d, Y') }}</td>
+                    <td>
+                        <div style="display:flex;gap:.25rem;">
+                            <a href="/admin/users/{{ $u->id }}/edit" class="btn btn-ghost btn-icon" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </a>
+                            @if($u->id !== auth()->id())
+                                <form method="POST" action="/admin/users/{{ $u->id }}" onsubmit="return confirm('Delete this admin user?')">
+                                    @csrf @method('DELETE')
+                                    <button class="btn btn-icon" title="Delete" style="color:var(--danger-600);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5">
+                        <x-empty-state icon="client" title="No admin users" description="Create your first admin user to get started." action="/admin/users/create" actionLabel="+ New Admin User" />
+                    </td>
+                </tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
 @endsection

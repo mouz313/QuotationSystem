@@ -78,8 +78,34 @@ class WebItemController extends Controller
         return redirect('/items')->with('success', 'Item deleted.');
     }
 
+    public function exportCsv(Request $request)
+    {
+        $currency = \App\Models\Currency::where('is_default', true)->first();
+        $cs = $currency?->symbol ?? '$';
+        $items = Item::where('user_id', $request->user()->id)->latest()->get();
+
+        $filename = 'items-' . now()->format('Y-m-d') . '.csv';
+        $handle = fopen('php://temp', 'w+');
+        fputcsv($handle, ['Title', 'Description', 'Unit Price', 'Created']);
+
+        foreach ($items as $item) {
+            fputcsv($handle, [$item->title, $item->description ?? '', $cs . number_format($item->unit_price, 2), $item->created_at->format('Y-m-d')]);
+        }
+
+        rewind($handle);
+        $content = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($content, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
     private function authorizeOwnership(Item $item): void
     {
-        $this->authorizeOwnership($item);
+        if ($item->user_id !== request()->user()->id) {
+            abort(403, 'Unauthorized.');
+        }
     }
 }

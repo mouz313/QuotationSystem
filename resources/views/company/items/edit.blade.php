@@ -1,28 +1,21 @@
 @extends('layouts.app')
 @section('title', 'Edit Item')
 @section('content')
-<div class="mb-6"><h1 class="text-2xl font-bold text-gray-800">Edit Item: {{ $item->title }}</h1></div>
-<div class="bg-white rounded-xl shadow p-6 max-w-2xl">
-    <form method="POST" action="/items/{{ $item->id }}" class="space-y-4">
-        @csrf @method('PUT')
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-            <input type="text" name="title" value="{{ old('title', $item->title) }}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none @error('title') border-red-500 @enderror">
-            @error('title')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea name="description" rows="2" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">{{ old('description', $item->description) }}</textarea>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price *</label>
-            <input type="number" name="unit_price" step="0.01" min="0" value="{{ old('unit_price', $item->unit_price) }}" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none @error('unit_price') border-red-500 @enderror">
-            @error('unit_price')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-        </div>
-        <div class="flex gap-2 pt-2">
-            <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Update Item</button>
-            <a href="/items" class="px-4 py-2 border text-sm rounded-lg hover:bg-gray-50">Cancel</a>
-        </div>
-    </form>
-</div>
+
+<x-page-header title="Edit Item: {{ $item->title }}" subtitle="Update item information" back="/items" />
+
+<x-card class="fade-in" style="max-width:40rem;">
+    <div style="padding:1.5rem;">
+        <form method="POST" action="/items/{{ $item->id }}" style="display:flex;flex-direction:column;gap:1rem;">
+            @csrf @method('PUT')
+            <x-form-input label="Title" name="title" required placeholder="Service or product title" :value="$item->title" :error="$errors->first('title')" />
+            <x-form-textarea label="Description" name="description" rows="2" placeholder="Brief description" :value="$item->description" :error="$errors->first('description')" />
+            <x-form-input label="Unit Price" name="unit_price" type="number" step="0.01" min="0" required placeholder="0.00" :value="$item->unit_price" :error="$errors->first('unit_price')" />
+            <div style="display:flex;gap:.5rem;padding-top:.5rem;">
+                <button type="submit" class="btn btn-brand">Update Item</button>
+                <a href="/items" class="btn btn-ghost" style="border:1px solid var(--surface-200);">Cancel</a>
+            </div>
+        </form>
+    </div>
+</x-card>
 @endsection

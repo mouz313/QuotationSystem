@@ -33,6 +33,7 @@ class LoginController extends Controller
         }
 
         Auth::guard('client')->login($clientUser, $request->filled('remember'));
+        $clientUser->update(['last_login_at' => now()]);
         $request->session()->regenerate();
         return redirect()->intended('/client/dashboard');
     }

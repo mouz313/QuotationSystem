@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 
 class SystemHealthController extends Controller
@@ -51,6 +52,26 @@ class SystemHealthController extends Controller
         ];
 
         return view('admin.health.index', compact('health'));
+    }
+
+    public function clearCache()
+    {
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('route:clear');
+        Artisan::call('view:clear');
+
+        return back()->with('success', 'Application cache, config, routes, and views cleared successfully.');
+    }
+
+    public function truncateLogs()
+    {
+        $logPath = storage_path('logs/laravel.log');
+        if (file_exists($logPath)) {
+            file_put_contents($logPath, '');
+        }
+
+        return back()->with('success', 'Log file cleared successfully.');
     }
 
     private function testCache(): bool

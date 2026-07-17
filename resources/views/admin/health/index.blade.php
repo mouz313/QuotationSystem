@@ -1,82 +1,123 @@
 @extends('layouts.admin')
 @section('title', 'System Health')
 @section('content')
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">System Health</h1>
-    <p class="text-sm text-gray-500">Server status and diagnostics</p>
-</div>
+<div class="fade-in">
+    <x-page-header title="System Health" subtitle="Server status and diagnostics">
+        @slot('actions')
+            <form method="POST" action="/admin/health/clear-cache" style="display:inline;">
+                @csrf
+                <button type="submit" class="btn btn-sm" style="background:var(--warning-50);color:var(--warning-600);" onclick="return confirm('Clear all application cache?')">
+                    <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Clear Cache
+                </button>
+            </form>
+            <form method="POST" action="/admin/health/truncate-logs" style="display:inline;">
+                @csrf
+                <button type="submit" class="btn btn-sm" style="background:var(--surface-100);color:var(--surface-600);" onclick="return confirm('Clear the application log file?')">
+                    <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Clear Logs
+                </button>
+            </form>
+        @endslot
+    </x-page-header>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">PHP Version</div>
-        <div class="text-xl font-bold text-gray-800">{{ $health['php_version'] }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Laravel Version</div>
-        <div class="text-xl font-bold text-gray-800">{{ $health['laravel_version'] }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Platform</div>
-        <div class="text-xl font-bold text-gray-800">{{ $health['os'] }} {{ $health['server_software'] }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Database</div>
-        <div class="text-xl font-bold {{ $health['db_connected'] ? 'text-green-600' : 'text-red-600' }}">
-            {{ $health['db_connected'] ? 'Connected' : 'Disconnected' }}
+    <div class="stat-grid" style="margin-bottom:1.5rem;">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">PHP Version</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ $health['php_version'] }}</div>
+            </div>
         </div>
-        <div class="text-xs text-gray-400">{{ strtoupper($health['db_driver']) }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Cache</div>
-        <div class="text-xl font-bold {{ $health['cache_working'] ? 'text-green-600' : 'text-red-600' }}">
-            {{ $health['cache_working'] ? 'Working' : 'Error' }}
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Laravel Version</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ $health['laravel_version'] }}</div>
+            </div>
         </div>
-        <div class="text-xs text-gray-400">{{ strtoupper($health['cache_driver']) }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Queue Driver</div>
-        <div class="text-xl font-bold text-gray-800">{{ strtoupper($health['queue_driver']) }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Pusher Configured</div>
-        <div class="text-xl font-bold {{ $health['pusher_configured'] ? 'text-green-600' : 'text-yellow-600' }}">
-            {{ $health['pusher_configured'] ? 'Yes' : 'No' }}
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Platform</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ $health['os'] }} {{ $health['server_software'] }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Database</div>
+                <div class="stat-value" style="font-size:1.25rem;{{ $health['db_connected'] ? 'color:var(--success-600);' : 'color:var(--danger-600);' }}">
+                    {{ $health['db_connected'] ? 'Connected' : 'Disconnected' }}
+                </div>
+                <div class="stat-sub">{{ strtoupper($health['db_driver']) }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Cache</div>
+                <div class="stat-value" style="font-size:1.25rem;{{ $health['cache_working'] ? 'color:var(--success-600);' : 'color:var(--danger-600);' }}">
+                    {{ $health['cache_working'] ? 'Working' : 'Error' }}
+                </div>
+                <div class="stat-sub">{{ strtoupper($health['cache_driver']) }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Queue Driver</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ strtoupper($health['queue_driver']) }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Pusher Configured</div>
+                <div class="stat-value" style="font-size:1.25rem;{{ $health['pusher_configured'] ? 'color:var(--success-600);' : 'color:var(--warning-600);' }}">
+                    {{ $health['pusher_configured'] ? 'Yes' : 'No' }}
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Storage Used</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ $health['storage_used'] }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Log File Size</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ $health['log_size'] }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Memory Limit</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ $health['memory_limit'] }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Max Upload Size</div>
+                <div class="stat-value" style="font-size:1.25rem;">{{ $health['max_upload'] }}</div>
+            </div>
         </div>
     </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Storage Used</div>
-        <div class="text-xl font-bold text-gray-800">{{ $health['storage_used'] }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Log File Size</div>
-        <div class="text-xl font-bold text-gray-800">{{ $health['log_size'] }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Memory Limit</div>
-        <div class="text-xl font-bold text-gray-800">{{ $health['memory_limit'] }}</div>
-    </div>
-    <div class="bg-white rounded-xl shadow p-5">
-        <div class="text-xs text-gray-500 mb-1">Max Upload Size</div>
-        <div class="text-xl font-bold text-gray-800">{{ $health['max_upload'] }}</div>
-    </div>
-</div>
 
-<div class="bg-white rounded-xl shadow overflow-hidden">
-    <div class="px-6 py-4 border-b">
-        <h2 class="text-lg font-semibold">Database Table Counts</h2>
+    <div class="d-card" style="overflow:hidden;">
+        <div class="d-card-header">
+            <h3>Database Table Counts</h3>
+        </div>
+        <table class="d-table">
+            <thead>
+                <tr>
+                    <th>Table</th>
+                    <th style="text-align:right;">Rows</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach($health['table_counts'] as $table => $count)
+                <tr>
+                    <td style="font-family:monospace;font-size:.8125rem;">{{ $table }}</td>
+                    <td style="text-align:right;font-weight:600;">{{ is_int($count) ? number_format($count) : $count }}</td>
+                </tr>
+            @endforeach
+            </tbody>
+        </table>
     </div>
-    <table class="w-full text-sm">
-        <thead><tr class="text-left text-gray-500 bg-gray-50">
-            <th class="px-4 py-3">Table</th><th class="px-4 py-3 text-right">Rows</th>
-        </tr></thead>
-        <tbody>
-        @foreach($health['table_counts'] as $table => $count)
-            <tr class="border-t">
-                <td class="px-4 py-3 font-mono text-sm">{{ $table }}</td>
-                <td class="px-4 py-3 text-right font-medium">{{ is_int($count) ? number_format($count) : $count }}</td>
-            </tr>
-        @endforeach
-        </tbody>
-    </table>
 </div>
 @endsection

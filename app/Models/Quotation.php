@@ -17,7 +17,7 @@ class Quotation extends Model
         'grand_total', 'status', 'terms_conditions',
         'payment_instructions',
         'payment_status', 'paid_amount', 'paid_at',
-        'viewed_at',
+        'viewed_at', 'invoice_number',
     ];
 
     protected $casts = [
@@ -77,6 +77,18 @@ class Quotation extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(QuotationAttachment::class);
+    }
+
+    public function generateInvoiceNumber(): void
+    {
+        $this->update([
+            'invoice_number' => 'INV-' . now()->format('Ymd') . '-' . str_pad($this->id, 4, '0', STR_PAD_LEFT),
+        ]);
     }
 
     public function getPendingPaymentsAttribute()

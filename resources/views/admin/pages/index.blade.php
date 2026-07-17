@@ -1,45 +1,58 @@
 @extends('layouts.admin')
 @section('title', 'Pages')
 @section('content')
-<div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">Pages</h1>
-        <p class="text-sm text-gray-500">Manage static frontend pages</p>
+<div class="fade-in">
+    <x-page-header title="Pages" subtitle="Manage static frontend pages">
+        <x:slot name="actions">
+            <a href="/admin/pages/create" class="btn btn-brand">+ New Page</a>
+        </x:slot>
+    </x-page-header>
+
+    <div class="d-card" style="overflow:hidden;">
+        <table class="d-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Slug</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @forelse($pages as $page)
+                <tr>
+                    <td style="font-weight:600;">{{ $page->title }}</td>
+                    <td style="font-family:monospace;font-size:.75rem;color:var(--surface-500);">/{{ $page->slug }}</td>
+                    <td>
+                        @if($page->is_published)
+                            <span class="badge badge-active">Published</span>
+                        @else
+                            <span class="badge badge-draft">Draft</span>
+                        @endif
+                    </td>
+                    <td style="color:var(--surface-500);font-size:.75rem;">{{ $page->updated_at->format('M d, Y') }}</td>
+                    <td>
+                        <div style="display:flex;gap:.25rem;">
+                            <a href="/admin/pages/{{ $page->id }}/edit" class="btn btn-ghost btn-icon" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </a>
+                            <form method="POST" action="/admin/pages/{{ $page->id }}" onsubmit="return confirm('Delete this page?')">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-icon" title="Delete" style="color:var(--danger-600);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="5">
+                    <x-empty-state title="No pages yet" description="Create your first static page to get started." icon="info" action="/admin/pages/create" actionLabel="+ New Page" />
+                </td></tr>
+            @endforelse
+            </tbody>
+        </table>
     </div>
-    <a href="/admin/pages/create" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">+ New Page</a>
-</div>
-<div class="bg-white rounded-xl shadow overflow-hidden">
-    <table class="w-full text-sm">
-        <thead><tr class="text-left text-gray-500 bg-gray-50">
-            <th class="px-4 py-3">Title</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Updated</th><th class="px-4 py-3">Actions</th>
-        </tr></thead>
-        <tbody>
-        @forelse($pages as $page)
-            <tr class="border-t hover:bg-gray-50">
-                <td class="px-4 py-3 font-medium">{{ $page->title }}</td>
-                <td class="px-4 py-3 text-gray-500 font-mono text-xs">/{{ $page->slug }}</td>
-                <td class="px-4 py-3">
-                    @if($page->is_published)
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Published</span>
-                    @else
-                        <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-500">Draft</span>
-                    @endif
-                </td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ $page->updated_at->format('M d, Y') }}</td>
-                <td class="px-4 py-3">
-                    <div class="flex gap-2">
-                        <a href="/admin/pages/{{ $page->id }}/edit" class="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">Edit</a>
-                        <form method="POST" action="/admin/pages/{{ $page->id }}" onsubmit="return confirm('Delete this page?')">
-                            @csrf @method('DELETE')
-                            <button class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Delete</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        @empty
-            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">No pages yet.</td></tr>
-        @endforelse
-        </tbody>
-    </table>
 </div>
 @endsection

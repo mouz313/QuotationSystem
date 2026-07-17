@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Client;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,9 +24,9 @@ class Company extends Model
         return $this->hasMany(User::class);
     }
 
-    public function quotations(): HasMany
+    public function quotations(): HasManyThrough
     {
-        return $this->hasMany(Quotation::class);
+        return $this->hasManyThrough(Quotation::class, User::class);
     }
 
     public function companyPackages(): HasMany

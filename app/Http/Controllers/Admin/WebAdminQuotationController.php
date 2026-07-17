@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\Notification;
 use App\Models\Quotation;
+use App\Models\QuotationStatusLog;
 use Illuminate\Http\Request;
 
 class WebAdminQuotationController extends Controller
@@ -51,8 +53,26 @@ class WebAdminQuotationController extends Controller
             'status' => 'required|in:draft,sent,accepted,declined',
         ]);
 
+        $oldStatus = $quotation->status;
         $quotation->update(['status' => $validated['status']]);
-        ActivityLog::log('status_changed', $quotation, 'Changed status of ' . $quotation->quote_number . ' to ' . $validated['status']);
+
+        QuotationStatusLog::create([
+            'quotation_id'    => $quotation->id,
+            'from_status'     => $oldStatus,
+            'to_status'       => $validated['status'],
+            'changed_by_type' => get_class($request->user()),
+            'changed_by_id'   => $request->user()->id,
+            'notes'           => 'Changed by admin',
+        ]);
+
+        ActivityLog::log('status_changed', $quotation, 'Admin changed status of ' . $quotation->quote_number . ' from ' . $oldStatus . ' to ' . $validated['status']);
+
+        Notification::create([
+            'user_id' => $quotation->user_id,
+            'type'    => 'status_changed',
+            'message' => "Admin changed {$quotation->quote_number} from " . str_replace('_', ' ', $oldStatus) . " to " . str_replace('_', ' ', $validated['status']) . ".",
+            'url'     => "/quotations/{$quotation->id}",
+        ]);
 
         event(new \App\Events\QuotationStatusChanged($quotation));
 
@@ -70,8 +90,9 @@ class WebAdminQuotationController extends Controller
 
     public function pdf(Quotation $quotation)
     {
-        $quotation->load(['client', 'items', 'currency', 'tax', 'user.company']);
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.quotations.pdf', compact('quotation'));
+        $quotation->load(['client', 'items', 'currency', 'tax', 'user.company', 'attachments']);
+        $company = $quotation->user->company;
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.quotations.pdf', compact('quotation', 'company'));
         $pdf->setOption('isRemoteEnabled', true);
         return $pdf->download($quotation->quote_number . '.pdf');
     }

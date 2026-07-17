@@ -51,6 +51,11 @@ class CompanySettingsController extends Controller
                 Storage::delete($company->logo);
             }
             $validated['logo'] = $request->file('logo')->store('logos', 'public');
+        } elseif ($request->boolean('remove_logo')) {
+            if ($company->logo) {
+                Storage::delete($company->logo);
+            }
+            $validated['logo'] = null;
         } else {
             unset($validated['logo']);
         }

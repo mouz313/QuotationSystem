@@ -1,52 +1,39 @@
 @extends('layouts.app')
 @section('title', 'Create Quotation')
 @section('content')
-<div class="max-w-7xl mx-auto">
-    <div class="mb-8 text-center lg:text-left">
-        <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium mb-3">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            New Quotation
-        </div>
-        <h1 class="text-3xl lg:text-4xl font-bold text-gray-900">Create a New Quotation</h1>
-        <p class="text-gray-500 mt-1">Fill in the details below and see a live preview as you go</p>
-    </div>
 
-    <form method="POST" action="/quotations" id="quoteForm">
+<div style="max-width:80rem;margin:0 auto;">
+    <x-page-header title="Create a New Quotation" subtitle="Fill in the details below and see a live preview as you go" back="/quotations" />
+
+    <form method="POST" action="/quotations" id="quoteForm" enctype="multipart/form-data">
         @csrf
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 space-y-6">
-                {{-- SECTION: Quotation Details --}}
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            </div>
-                            <div>
-                                <h2 class="text-lg font-semibold text-white">Quotation Details</h2>
-                                <p class="text-indigo-200 text-xs">Client, currency, and dates</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Client <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    <select name="client_id" required class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white text-sm transition-shadow hover:shadow-sm">
-                                        <option value="">Select a client</option>
-                                        @foreach($clients as $client)
-                                            <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>{{ $client->name }} ({{ $client->email }})</option>
-                                        @endforeach
-                                    </select>
+        <div style="display:grid;grid-template-columns:1fr;gap:1.5rem;" class="fade-in">
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+                <div style="display:flex;flex-direction:column;gap:1.5rem;">
+                    <x-card>
+                        <div class="d-card-header" style="background:var(--brand-50);">
+                            <div style="display:flex;align-items:center;gap:.75rem;">
+                                <svg style="width:1.125rem;height:1.125rem;color:var(--brand-600);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <div>
+                                    <h3>Quotation Details</h3>
+                                    <p style="font-size:.65rem;color:var(--surface-400);margin-top:.125rem;">Client, currency, and dates</p>
                                 </div>
                             </div>
+                        </div>
+                        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Currency <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <select name="currency_id" id="currencySelect" required class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white text-sm transition-shadow hover:shadow-sm">
+                                <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Client <span style="color:var(--danger-500);">*</span></label>
+                                <select name="client_id" required style="width:100%;padding:.625rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;background:var(--surface-0);transition:box-shadow .15s;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right .5rem center;background-size:1.25rem;padding-right:2.25rem;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                    <option value="">Select a client</option>
+                                    @foreach($clients as $client)
+                                        <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>{{ $client->name }} ({{ $client->email }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                                <div>
+                                    <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Currency <span style="color:var(--danger-500);">*</span></label>
+                                    <select name="currency_id" id="currencySelect" required style="width:100%;padding:.625rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;background:var(--surface-0);appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right .5rem center;background-size:1.25rem;padding-right:2.25rem;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
                                         <option value="">Select currency</option>
                                         @foreach($currencies as $cur)
                                             <option value="{{ $cur->id }}" data-symbol="{{ $cur->symbol }}" {{ old('currency_id', $currencies->where('is_default')->first()?->id) == $cur->id ? 'selected' : '' }}>
@@ -55,258 +42,254 @@
                                         @endforeach
                                     </select>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Issue Date <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    <input type="date" name="issue_date" value="{{ old('issue_date', now()->toDateString()) }}" required class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-shadow hover:shadow-sm">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
-                                <div class="relative">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <input type="date" name="expiry_date" value="{{ old('expiry_date') }}" class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-shadow hover:shadow-sm">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-5 pt-5 border-t border-gray-100">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Quotation Type <span class="text-red-500">*</span></label>
-                            <div class="flex gap-3">
-                                <label class="flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all {{ old('type', 'simple') === 'simple' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300' }}" id="typeSimpleLabel">
-                                    <input type="radio" name="type" value="simple" {{ old('type', 'simple') === 'simple' ? 'checked' : '' }} onchange="toggleType(this.value)" class="text-indigo-600 focus:ring-indigo-500">
-                                    <div>
-                                        <div class="text-sm font-semibold">Simple</div>
-                                        <div class="text-xs opacity-70">Standard line items</div>
-                                    </div>
-                                </label>
-                                <label class="flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all {{ old('type') === 'milestone' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300' }}" id="typeMilestoneLabel">
-                                    <input type="radio" name="type" value="milestone" {{ old('type') === 'milestone' ? 'checked' : '' }} onchange="toggleType(this.value)" class="text-indigo-600 focus:ring-indigo-500">
-                                    <div>
-                                        <div class="text-sm font-semibold">Milestone</div>
-                                        <div class="text-xs opacity-70">Date-based payment milestones</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <input type="hidden" name="type" id="typeHidden" value="{{ old('type', 'simple') }}">
-                        </div>
-                    </div>
-                </div>
-
-                {{-- SECTION: Line Items --}}
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                </div>
                                 <div>
-                                    <h2 class="text-lg font-semibold text-white" id="itemsSectionTitle">Line Items</h2>
-                                    <p class="text-emerald-200 text-xs" id="itemsSectionDesc">Products or services to include</p>
+                                    <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Issue Date <span style="color:var(--danger-500);">*</span></label>
+                                    <input type="date" name="issue_date" value="{{ old('issue_date', now()->toDateString()) }}" required style="width:100%;padding:.625rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
                                 </div>
                             </div>
-                            <div>
-                                <button type="button" onclick="addRow()" class="px-3 py-1.5 text-xs bg-white text-emerald-700 font-medium rounded-lg hover:bg-emerald-50 transition-all">
-                                    + Add Item
-                                </button>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                                <div>
+                                    <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Expiry Date</label>
+                                    <input type="date" name="expiry_date" value="{{ old('expiry_date') }}" style="width:100%;padding:.625rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        @if($items->isNotEmpty())
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Your Saved Items</label>
-                                <span class="text-xs text-gray-400">{{ $items->count() }} items</span>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                @foreach($items as $item)
-                                <button type="button" onclick='addFromSavedItem(@json(['title' => $item->title, 'description' => $item->description, 'price' => $item->unit_price]))'
-                                    class="text-left p-3 bg-white border border-gray-200 rounded-xl hover:border-emerald-400 hover:shadow-sm hover:bg-emerald-50/50 transition-all group">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div class="min-w-0">
-                                            <div class="text-sm font-medium text-gray-800 group-hover:text-emerald-700 truncate">{{ $item->title }}</div>
-                                            @if($item->description)
-                                            <div class="text-xs text-gray-400 truncate mt-0.5">{{ $item->description }}</div>
-                                            @endif
+
+                            <div style="padding-top:1.25rem;border-top:1px solid var(--surface-100);">
+                                <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.5rem;">Quotation Type <span style="color:var(--danger-500);">*</span></label>
+                                <div style="display:flex;gap:.75rem;">
+                                    <label style="flex:1;display:flex;align-items:center;gap:.625rem;padding:.75rem 1rem;border:2px solid {{ old('type', 'simple') === 'simple' ? 'var(--brand-500)' : 'var(--surface-200)' }};border-radius:.75rem;cursor:pointer;background:{{ old('type', 'simple') === 'simple' ? 'var(--brand-50)' : 'transparent' }};color:{{ old('type', 'simple') === 'simple' ? 'var(--brand-700)' : 'var(--surface-600)' }};transition:all .15s;" id="typeSimpleLabel">
+                                        <input type="radio" name="type" value="simple" {{ old('type', 'simple') === 'simple' ? 'checked' : '' }} onchange="toggleType(this.value)" style="accent-color:var(--brand-600);">
+                                        <div>
+                                            <div style="font-size:.8125rem;font-weight:700;">Simple</div>
+                                            <div style="font-size:.65rem;opacity:.7;">Standard line items</div>
                                         </div>
-                                        <div class="text-sm font-semibold text-emerald-600 whitespace-nowrap">${{ number_format($item->unit_price, 2) }}</div>
-                                    </div>
-                                </button>
-                                @endforeach
+                                    </label>
+                                    <label style="flex:1;display:flex;align-items:center;gap:.625rem;padding:.75rem 1rem;border:2px solid {{ old('type') === 'milestone' ? 'var(--brand-500)' : 'var(--surface-200)' }};border-radius:.75rem;cursor:pointer;background:{{ old('type') === 'milestone' ? 'var(--brand-50)' : 'transparent' }};color:{{ old('type') === 'milestone' ? 'var(--brand-700)' : 'var(--surface-600)' }};transition:all .15s;" id="typeMilestoneLabel">
+                                        <input type="radio" name="type" value="milestone" {{ old('type') === 'milestone' ? 'checked' : '' }} onchange="toggleType(this.value)" style="accent-color:var(--brand-600);">
+                                        <div>
+                                            <div style="font-size:.8125rem;font-weight:700;">Milestone</div>
+                                            <div style="font-size:.65rem;opacity:.7;">Date-based payment milestones</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <input type="hidden" name="type" id="typeHidden" value="{{ old('type', 'simple') }}">
                             </div>
                         </div>
-                        @endif
+                    </x-card>
 
-                        {{-- Items header --}}
-                        <div class="hidden md:grid grid-cols-12 gap-2 mb-2 px-1">
-                            <div class="col-span-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Item</div>
-                            <div class="col-span-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Description</div>
-                            <div class="col-span-1 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Qty</div>
-                            <div class="col-span-2 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Price</div>
-                            <div class="col-span-1 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Total</div>
-                            <div class="col-span-1"></div>
-                        </div>
-
-                        <div id="items-container" class="space-y-2">
-                            <div class="item-row bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-100 transition-all hover:border-gray-200">
-                                <div class="grid grid-cols-12 gap-2 items-end">
-                                    <div class="col-span-12 md:col-span-4">
-                                        <label class="block text-xs text-gray-500 mb-1 md:hidden">Title *</label>
-                                        <input type="text" name="items[0][item_title]" required class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Item title">
-                                    </div>
-                                    <div class="col-span-8 md:col-span-3">
-                                        <label class="block text-xs text-gray-500 mb-1 md:hidden">Description</label>
-                                        <input type="text" name="items[0][item_description]" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Description">
-                                    </div>
-                                    <div class="col-span-2 md:col-span-1">
-                                        <label class="block text-xs text-gray-500 mb-1 md:hidden">Qty *</label>
-                                        <input type="number" name="items[0][quantity]" min="1" value="1" required onchange="calcRow(this)" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-right">
-                                    </div>
-                                    <div class="col-span-2 md:col-span-2">
-                                        <label class="block text-xs text-gray-500 mb-1 md:hidden">Price *</label>
-                                        <input type="number" name="items[0][unit_price]" step="0.01" min="0" value="0" required onchange="calcRow(this)" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-right">
-                                    </div>
-                                    <div class="col-span-1">
-                                        <label class="block text-xs text-gray-500 mb-1 md:hidden">Total</label>
-                                        <div class="px-3 py-2 text-sm font-semibold text-gray-700 row-subtotal">{{ $defaultCurrency?->symbol ?? '$' }}0.00</div>
-                                    </div>
-                                    <div class="col-span-1 flex items-end justify-end">
-                                        <button type="button" onclick="this.closest('.item-row').remove(); recalc()" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
+                    <x-card>
+                        <div class="d-card-header" style="background:var(--success-50);">
+                            <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                                <div style="display:flex;align-items:center;gap:.75rem;">
+                                    <svg style="width:1.125rem;height:1.125rem;color:var(--success-600);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                    <div>
+                                        <h3 id="itemsSectionTitle">Line Items</h3>
+                                        <p style="font-size:.65rem;color:var(--success-500);margin-top:.125rem;" id="itemsSectionDesc">Products or services to include</p>
                                     </div>
                                 </div>
-                                <div class="milestone-dates hidden grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
-                                    <div>
-                                        <label class="block text-xs text-gray-500 mb-1">Start Date *</label>
-                                        <input type="date" name="items[0][start_date]" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500 mb-1">End Date *</label>
-                                        <input type="date" name="items[0][end_date]" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                    </div>
+                                <button type="button" onclick="addRow()" style="padding:.375rem .75rem;font-size:.7rem;background:white;color:var(--success-700);font-weight:700;border-radius:.5rem;border:none;cursor:pointer;">+ Add Item</button>
+                            </div>
+                        </div>
+                        <div style="padding:1.5rem;">
+                            @if($items->isNotEmpty())
+                            <div style="margin-bottom:1rem;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                                    <label style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-500);">Your Saved Items</label>
+                                    <span style="font-size:.65rem;color:var(--surface-400);">{{ $items->count() }} items</span>
                                 </div>
-                            </div>
-                        </div>
-
-                        <button type="button" onclick="addRow()" class="mt-3 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50/50 transition-all flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            Add Another Item
-                        </button>
-                    </div>
-                </div>
-
-                {{-- SECTION: Terms --}}
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            </div>
-                            <div>
-                                <h2 class="text-lg font-semibold text-white">Terms & Conditions</h2>
-                                <p class="text-amber-200 text-xs">Optional terms for this quotation</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <textarea name="terms_conditions" rows="4" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-shadow hover:shadow-sm" placeholder="Payment due within 14 days...">{{ old('terms_conditions', $defaultTerms) }}</textarea>
-                    </div>
-                    <div class="px-6 pb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Payment Instructions</label>
-                        <textarea name="payment_instructions" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Payment due within 14 days...&#10;Reference: Quote #">{{ old('payment_instructions') }}</textarea>
-                    </div>
-                </div>
-            </div>
-
-            {{-- RIGHT COLUMN: Summary & Actions --}}
-            <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lg:sticky lg:top-6">
-                    <div class="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                            </div>
-                            <h2 class="text-lg font-semibold text-white">Summary</h2>
-                        </div>
-                    </div>
-                    <div class="p-6 space-y-5">
-                        {{-- Tax --}}
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tax</label>
-                            <div class="space-y-2">
-                                <select name="tax_id" id="taxSelect" onchange="onTaxChange()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <option value="">No tax</option>
-                                    @foreach($taxes as $tax)
-                                        <option value="{{ $tax->id }}" data-percentage="{{ $tax->percentage }}" {{ old('tax_id') == $tax->id ? 'selected' : '' }}>
-                                            {{ $tax->name }} ({{ $tax->percentage }}%)
-                                        </option>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+                                    @foreach($items as $item)
+                                    <button type="button" onclick='addFromSavedItem(@json(['title' => $item->title, 'description' => $item->description, 'price' => $item->unit_price]))' style="text-align:left;padding:.75rem;background:white;border:1px solid var(--surface-200);border-radius:.75rem;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--success-400)';this.style.background='var(--success-50)'" onmouseout="this.style.borderColor='var(--surface-200)';this.style.background='white'">
+                                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;">
+                                            <div style="min-width:0;">
+                                                <div style="font-size:.8125rem;font-weight:600;color:var(--surface-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $item->title }}</div>
+                                                @if($item->description)
+                                                <div style="font-size:.65rem;color:var(--surface-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:.125rem;">{{ $item->description }}</div>
+                                                @endif
+                                            </div>
+                                            <div style="font-size:.8125rem;font-weight:700;color:var(--success-600);white-space:nowrap;">${{ number_format($item->unit_price, 2) }}</div>
+                                        </div>
+                                    </button>
                                     @endforeach
-                                </select>
-                                <input type="hidden" name="tax_id" id="taxIdHidden" value="{{ old('tax_id') }}">
-                                <div class="flex items-center gap-2">
-                                    <input type="number" name="tax_percentage" id="taxPercentage" step="0.01" min="0" max="100" value="{{ old('tax_percentage', 0) }}" onchange="recalc()" class="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-right" placeholder="%">
-                                    <span class="text-xs text-gray-400">%</span>
-                                    <span id="tax-amount" class="ml-auto text-sm font-medium text-gray-700">$0.00</span>
                                 </div>
                             </div>
-                            <button type="button" onclick="toggleAddTax()" id="addTaxToggle" class="mt-2 text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 transition-colors">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                                Add New Tax
-                            </button>
-                            <div id="addTaxForm" class="hidden mt-2 p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
-                                <input type="text" id="newTaxName" placeholder="Tax name" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none">
-                                <div class="flex gap-2">
-                                    <input type="number" id="newTaxPercent" placeholder="%" min="0" max="100" step="0.01" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none">
-                                    <button type="button" onclick="saveNewTax()" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors">Save</button>
+                            @endif
+
+                            <div style="display:grid;grid-template-columns:4fr 3fr 1fr 2fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem;padding:0 .25rem;" class="hidden md:grid">
+                                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-400);">Item</div>
+                                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-400);">Description</div>
+                                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-400);text-align:right;">Qty</div>
+                                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-400);text-align:right;">Price</div>
+                                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-400);text-align:right;">Total</div>
+                                <div></div>
+                            </div>
+
+                            <div id="items-container" style="display:flex;flex-direction:column;gap:.5rem;">
+                                <div class="item-row" style="padding:.75rem 1rem;background:var(--surface-50);border:1px solid var(--surface-100);border-radius:.75rem;transition:all .15s;">
+                                    <div style="display:grid;grid-template-columns:12fr;gap:.5rem;align-items:end;">
+                                        <div>
+                                            <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Title *</label>
+                                            <input type="text" name="items[0][item_title]" required style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);" placeholder="Item title">
+                                        </div>
+                                        <div>
+                                            <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Description</label>
+                                            <input type="text" name="items[0][item_description]" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);" placeholder="Description">
+                                        </div>
+                                        <div>
+                                            <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Qty *</label>
+                                            <input type="number" name="items[0][quantity]" min="1" value="1" required onchange="calcRow(this)" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;text-align:right;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                        </div>
+                                        <div>
+                                            <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Price *</label>
+                                            <input type="number" name="items[0][unit_price]" step="0.01" min="0" value="0" required onchange="calcRow(this)" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;text-align:right;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                        </div>
+                                        <div>
+                                            <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Total</label>
+                                            <div style="padding:.5rem .75rem;font-size:.8125rem;font-weight:700;color:var(--surface-700);" class="row-subtotal">{{ $defaultCurrency?->symbol ?? '$' }}0.00</div>
+                                        </div>
+                                        <div style="display:flex;align-items:end;justify-content:end;">
+                                            <button type="button" onclick="this.closest('.item-row').remove(); recalc()" style="padding:.5rem;color:var(--surface-400);border-radius:.5rem;border:none;cursor:pointer;transition:color .15s,background .15s;" onmouseover="this.style.color='var(--danger-600)';this.style.background='var(--danger-50)'" onmouseout="this.style.color='var(--surface-400)';this.style.background='transparent'">
+                                                <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="milestone-dates hidden" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--surface-200);">
+                                        <div>
+                                            <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Start Date *</label>
+                                            <input type="date" name="items[0][start_date]" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                        </div>
+                                        <div>
+                                            <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">End Date *</label>
+                                            <input type="date" name="items[0][end_date]" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="newTaxError" class="text-xs text-red-500 hidden"></div>
                             </div>
-                        </div>
 
-                        {{-- Discount --}}
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Discount</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">$</span>
-                                <input type="number" name="discount_amount" step="0.01" min="0" value="{{ old('discount_amount', 0) }}" onchange="recalc()" class="w-full pl-7 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-right">
-                            </div>
-                        </div>
-
-                        {{-- Totals --}}
-                        <div class="border-t border-gray-100 pt-4 space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Subtotal</span>
-                                <span id="gross-total" class="font-medium text-gray-700">$0.00</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Tax</span>
-                                <span id="tax-amount-total" class="font-medium text-gray-700">$0.00</span>
-                            </div>
-                            @php $hasDiscount = old('discount_amount', 0) > 0; @endphp
-                            <div class="flex justify-between text-sm {{ $hasDiscount ? '' : 'hidden' }}" id="discountRow">
-                                <span class="text-gray-500">Discount</span>
-                                <span id="discount-amount-display" class="font-medium text-red-500">-$0.00</span>
-                            </div>
-                            <div class="border-t-2 border-gray-800 pt-3 flex justify-between">
-                                <span class="font-bold text-gray-800">Grand Total</span>
-                                <span id="grand-total" class="text-xl font-bold text-indigo-600">$0.00</span>
-                            </div>
-                        </div>
-
-                        {{-- Actions --}}
-                        <div class="border-t border-gray-100 pt-5 space-y-3">
-                            <button type="submit" class="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                Create Quotation
+                            <button type="button" onclick="addRow()" style="width:100%;margin-top:.75rem;padding:.75rem;border:2px dashed var(--surface-200);border-radius:.75rem;font-size:.8125rem;color:var(--surface-400);background:transparent;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.5rem;" onmouseover="this.style.color='var(--success-600)';this.style.borderColor='var(--success-400)';this.style.background='var(--success-50)'" onmouseout="this.style.color='var(--surface-400)';this.style.borderColor='var(--surface-200)';this.style.background='transparent'">
+                                <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                Add Another Item
                             </button>
-                            <a href="/quotations" class="block w-full py-3 text-center border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-all">
-                                Cancel
-                            </a>
+                        </div>
+                    </x-card>
+
+                    <x-card>
+                        <div class="d-card-header" style="background:var(--warning-50);">
+                            <div style="display:flex;align-items:center;gap:.75rem;">
+                                <svg style="width:1.125rem;height:1.125rem;color:var(--warning-600);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <div>
+                                    <h3>Terms & Conditions</h3>
+                                    <p style="font-size:.65rem;color:var(--warning-500);margin-top:.125rem;">Optional terms for this quotation</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding:1.5rem;">
+                            <textarea name="terms_conditions" rows="4" placeholder="Payment due within 14 days..." style="width:100%;padding:.75rem;border:1px solid var(--surface-200);border-radius:.75rem;font-size:.8125rem;color:var(--surface-800);outline:none;resize:vertical;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">{{ old('terms_conditions', $defaultTerms) }}</textarea>
+                        </div>
+                        <div style="padding:0 1.5rem 1.5rem;">
+                            <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Payment Instructions</label>
+                            <textarea name="payment_instructions" rows="3" placeholder="Payment due within 14 days...&#10;Reference: Quote #" style="width:100%;padding:.75rem;border:1px solid var(--surface-200);border-radius:.75rem;font-size:.8125rem;color:var(--surface-800);outline:none;resize:vertical;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">{{ old('payment_instructions') }}</textarea>
+                        </div>
+                    </x-card>
+
+                    <x-card>
+                        <div class="d-card-header" style="background:var(--info-50);">
+                            <div style="display:flex;align-items:center;gap:.75rem;">
+                                <svg style="width:1.125rem;height:1.125rem;color:var(--info-600);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                <div>
+                                    <h3>Attachments</h3>
+                                    <p style="font-size:.65rem;color:var(--info-500);margin-top:.125rem;">Optional files to include (PDF, Word, Excel, Images)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding:1.5rem;">
+                            <div style="border:2px dashed var(--surface-200);border-radius:.75rem;padding:1.5rem;text-align:center;transition:all .15s;" onmouseover="this.style.borderColor='var(--info-400)';this.style.background='var(--info-50)'" onmouseout="this.style.borderColor='var(--surface-200)';this.style.background='transparent'">
+                                <svg style="width:2.5rem;height:2.5rem;color:var(--surface-300);margin:0 auto .75rem;" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                <p style="font-size:.8125rem;color:var(--surface-600);font-weight:600;margin-bottom:.25rem;">Drop files here or click to browse</p>
+                                <p style="font-size:.65rem;color:var(--surface-400);margin-bottom:.75rem;">Max 5 files, 10MB each. PDF, Word, Excel, JPG, PNG.</p>
+                                <input type="file" name="attachments[]" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="file-input" style="font-size:.8125rem;">
+                            </div>
+                        </div>
+                    </x-card>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:1.5rem;">
+                    <div class="d-card fade-in" style="position:sticky;top:4rem;">
+                        <div class="d-card-header" style="background:var(--surface-900);color:white;">
+                            <div style="display:flex;align-items:center;gap:.75rem;">
+                                <svg style="width:1.125rem;height:1.125rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                <h3 style="color:white;">Summary</h3>
+                            </div>
+                        </div>
+                        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;">
+                            <div>
+                                <label style="display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-500);margin-bottom:.5rem;">Tax</label>
+                                <div style="display:flex;flex-direction:column;gap:.5rem;">
+                                    <select name="tax_id" id="taxSelect" onchange="onTaxChange()" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;background:var(--surface-0);appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right .5rem center;background-size:1.25rem;padding-right:2.25rem;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                        <option value="">No tax</option>
+                                        @foreach($taxes as $tax)
+                                            <option value="{{ $tax->id }}" data-percentage="{{ $tax->percentage }}" {{ old('tax_id') == $tax->id ? 'selected' : '' }}>
+                                                {{ $tax->name }} ({{ $tax->percentage }}%)
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <input type="hidden" name="tax_id" id="taxIdHidden" value="{{ old('tax_id') }}">
+                                    <div style="display:flex;align-items:center;gap:.5rem;">
+                                        <input type="number" name="tax_percentage" id="taxPercentage" step="0.01" min="0" max="100" value="{{ old('tax_percentage', 0) }}" onchange="recalc()" style="width:5rem;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;text-align:right;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);" placeholder="%">
+                                        <span style="font-size:.7rem;color:var(--surface-400);">%</span>
+                                        <span id="tax-amount" style="margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--surface-700);">$0.00</span>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="toggleAddTax()" id="addTaxToggle" style="margin-top:.5rem;font-size:.7rem;color:var(--brand-600);font-weight:600;display:flex;align-items:center;gap:.25rem;border:none;cursor:pointer;background:transparent;transition:color .15s;">
+                                    <svg style="width:.75rem;height:.75rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                    Add New Tax
+                                </button>
+                                <div id="addTaxForm" class="hidden" style="margin-top:.5rem;padding:.75rem;background:var(--surface-50);border-radius:.75rem;border:1px solid var(--surface-200);display:flex;flex-direction:column;gap:.5rem;">
+                                    <input type="text" id="newTaxName" placeholder="Tax name" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;">
+                                    <div style="display:flex;gap:.5rem;">
+                                        <input type="number" id="newTaxPercent" placeholder="%" min="0" max="100" step="0.01" style="flex:1;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;">
+                                        <button type="button" onclick="saveNewTax()" class="btn btn-brand" style="font-size:.8125rem;">Save</button>
+                                    </div>
+                                    <div id="newTaxError" class="hidden" style="font-size:.7rem;color:var(--danger-600);"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-500);margin-bottom:.5rem;">Discount</label>
+                                <div style="position:relative;">
+                                    <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);font-size:.8125rem;color:var(--surface-400);font-weight:600;">$</span>
+                                    <input type="number" name="discount_amount" step="0.01" min="0" value="{{ old('discount_amount', 0) }}" onchange="recalc()" style="width:100%;padding:.625rem .75rem .625rem 1.75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;text-align:right;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);">
+                                </div>
+                            </div>
+
+                            <div style="border-top:1px solid var(--surface-100);padding-top:1rem;display:flex;flex-direction:column;gap:.5rem;">
+                                <div style="display:flex;justify-content:space-between;font-size:.8125rem;">
+                                    <span style="color:var(--surface-500);">Subtotal</span>
+                                    <span id="gross-total" style="font-weight:600;color:var(--surface-700);">$0.00</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;font-size:.8125rem;">
+                                    <span style="color:var(--surface-500);">Tax</span>
+                                    <span id="tax-amount-total" style="font-weight:600;color:var(--surface-700);">$0.00</span>
+                                </div>
+                                @php $hasDiscount = old('discount_amount', 0) > 0; @endphp
+                                <div id="discountRow" class="{{ $hasDiscount ? '' : 'hidden' }}" style="display:flex;justify-content:space-between;font-size:.8125rem;">
+                                    <span style="color:var(--surface-500);">Discount</span>
+                                    <span id="discount-amount-display" style="font-weight:600;color:var(--danger-500);">-$0.00</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;padding-top:.75rem;border-top:2px solid var(--surface-900);">
+                                    <span style="font-weight:800;color:var(--surface-900);">Grand Total</span>
+                                    <span id="grand-total" style="font-size:1.25rem;font-weight:800;color:var(--brand-600);">$0.00</span>
+                                </div>
+                            </div>
+
+                            <div style="border-top:1px solid var(--surface-100);padding-top:1.25rem;display:flex;flex-direction:column;gap:.75rem;">
+                                <button type="submit" class="btn btn-brand" style="width:100%;justify-content:center;padding:.75rem;font-size:.875rem;">
+                                    Create Quotation
+                                </button>
+                                <a href="/quotations" style="display:block;width:100%;text-align:center;padding:.75rem;border:1px solid var(--surface-200);color:var(--surface-600);font-weight:600;border-radius:.5rem;text-decoration:none;font-size:.8125rem;transition:background .15s;" onmouseover="this.style.background='var(--surface-50)'" onmouseout="this.style.background='transparent'">
+                                    Cancel
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -322,14 +305,14 @@ function toggleType(value) {
     document.getElementById('typeHidden').value = value;
     const isMilestone = value === 'milestone';
     document.querySelectorAll('.milestone-dates').forEach(el => {
-        el.classList.toggle('hidden', !isMilestone);
+        el.style.display = isMilestone ? 'grid' : 'none';
         el.querySelectorAll('input').forEach(input => {
             if (isMilestone) input.setAttribute('required', 'required');
             else input.removeAttribute('required');
         });
     });
-    document.getElementById('typeSimpleLabel').className = `flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all ${!isMilestone ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`;
-    document.getElementById('typeMilestoneLabel').className = `flex items-center gap-2.5 px-4 py-3 border-2 rounded-xl cursor-pointer transition-all ${isMilestone ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`;
+    document.getElementById('typeSimpleLabel').style.cssText = `flex:1;display:flex;align-items:center;gap:.625rem;padding:.75rem 1rem;border:2px solid ${!isMilestone ? 'var(--brand-500)' : 'var(--surface-200)'};border-radius:.75rem;cursor:pointer;background:${!isMilestone ? 'var(--brand-50)' : 'transparent'};color:${!isMilestone ? 'var(--brand-700)' : 'var(--surface-600)'};transition:all .15s;`;
+    document.getElementById('typeMilestoneLabel').style.cssText = `flex:1;display:flex;align-items:center;gap:.625rem;padding:.75rem 1rem;border:2px solid ${isMilestone ? 'var(--brand-500)' : 'var(--surface-200)'};border-radius:.75rem;cursor:pointer;background:${isMilestone ? 'var(--brand-50)' : 'transparent'};color:${isMilestone ? 'var(--brand-700)' : 'var(--surface-600)'};transition:all .15s;`;
     document.getElementById('itemsSectionTitle').textContent = isMilestone ? 'Milestones' : 'Line Items';
     document.getElementById('itemsSectionDesc').textContent = isMilestone ? 'Define milestones with date ranges and payments' : 'Products or services to include';
 }
@@ -358,42 +341,42 @@ function addRow() {
     const container = document.getElementById('items-container');
     const i = rowIndex;
     const isMilestone = document.getElementById('typeHidden').value === 'milestone';
-    const html = `<div class="item-row bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-100 transition-all hover:border-gray-200">
-        <div class="grid grid-cols-12 gap-2 items-end">
-            <div class="col-span-12 md:col-span-4">
-                <label class="block text-xs text-gray-500 mb-1 md:hidden">Title *</label>
-                <input type="text" name="items[${i}][item_title]" required class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Item title">
+    const html = `<div class="item-row" style="padding:.75rem 1rem;background:var(--surface-50);border:1px solid var(--surface-100);border-radius:.75rem;transition:all .15s;">
+        <div style="display:grid;grid-template-columns:12fr;gap:.5rem;align-items:end;">
+            <div>
+                <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Title *</label>
+                <input type="text" name="items[${i}][item_title]" required style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;" placeholder="Item title">
             </div>
-            <div class="col-span-8 md:col-span-3">
-                <label class="block text-xs text-gray-500 mb-1 md:hidden">Description</label>
-                <input type="text" name="items[${i}][item_description]" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Description">
+            <div>
+                <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Description</label>
+                <input type="text" name="items[${i}][item_description]" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;" placeholder="Description">
             </div>
-            <div class="col-span-2 md:col-span-1">
-                <label class="block text-xs text-gray-500 mb-1 md:hidden">Qty *</label>
-                <input type="number" name="items[${i}][quantity]" min="1" value="1" required onchange="calcRow(this)" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-right">
+            <div>
+                <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Qty *</label>
+                <input type="number" name="items[${i}][quantity]" min="1" value="1" required onchange="calcRow(this)" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;text-align:right;">
             </div>
-            <div class="col-span-2 md:col-span-2">
-                <label class="block text-xs text-gray-500 mb-1 md:hidden">Price *</label>
-                <input type="number" name="items[${i}][unit_price]" step="0.01" min="0" value="0" required onchange="calcRow(this)" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-right">
+            <div>
+                <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Price *</label>
+                <input type="number" name="items[${i}][unit_price]" step="0.01" min="0" value="0" required onchange="calcRow(this)" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;text-align:right;">
             </div>
-            <div class="col-span-1">
-                <label class="block text-xs text-gray-500 mb-1 md:hidden">Total</label>
-                <div class="px-3 py-2 text-sm font-semibold text-gray-700 row-subtotal">${fmt(0)}</div>
+            <div>
+                <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Total</label>
+                <div style="padding:.5rem .75rem;font-size:.8125rem;font-weight:700;color:var(--surface-700);" class="row-subtotal">${fmt(0)}</div>
             </div>
-            <div class="col-span-1 flex items-end justify-end">
-                <button type="button" onclick="this.closest('.item-row').remove(); recalc()" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <div style="display:flex;align-items:end;justify-content:end;">
+                <button type="button" onclick="this.closest('.item-row').remove(); recalc()" style="padding:.5rem;color:var(--surface-400);border-radius:.5rem;border:none;cursor:pointer;">
+                    <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
             </div>
         </div>
-        <div class="milestone-dates ${isMilestone ? '' : 'hidden'} grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
+        <div class="milestone-dates" style="display:${isMilestone ? 'grid' : 'none'};grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--surface-200);">
             <div>
-                <label class="block text-xs text-gray-500 mb-1">Start Date *</label>
-                <input type="date" name="items[${i}][start_date]" ${isMilestone ? 'required' : ''} class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">Start Date *</label>
+                <input type="date" name="items[${i}][start_date]" ${isMilestone ? 'required' : ''} style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;">
             </div>
             <div>
-                <label class="block text-xs text-gray-500 mb-1">End Date *</label>
-                <input type="date" name="items[${i}][end_date]" ${isMilestone ? 'required' : ''} class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <label style="display:block;font-size:.65rem;color:var(--surface-500);margin-bottom:.25rem;">End Date *</label>
+                <input type="date" name="items[${i}][end_date]" ${isMilestone ? 'required' : ''} style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;">
             </div>
         </div>
     </div>`;
@@ -429,10 +412,10 @@ function recalc() {
 
     const discountRow = document.getElementById('discountRow');
     if (discount > 0) {
-        discountRow.classList.remove('hidden');
+        discountRow.style.display = 'flex';
         document.getElementById('discount-amount-display').textContent = '-' + fmt(discount);
     } else {
-        discountRow.classList.add('hidden');
+        discountRow.style.display = 'none';
     }
 }
 

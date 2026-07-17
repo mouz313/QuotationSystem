@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Company;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Payment;
+use App\Models\Quotation;
 use Illuminate\Http\Request;
 
 class WebClientController extends Controller
@@ -25,12 +27,39 @@ class WebClientController extends Controller
 
         $clients = $clients->latest()->paginate(15)->withQueryString();
 
-        return view('company.clients.index', compact('clients'));
+        $pendingPaymentClientIds = Payment::where('payments.status', 'pending')
+            ->join('quotations', 'payments.quotation_id', '=', 'quotations.id')
+            ->where('quotations.user_id', $request->user()->id)
+            ->where('quotations.client_id', '>', 0)
+            ->pluck('quotations.client_id')
+            ->unique()
+            ->toArray();
+
+        return view('company.clients.index', compact('clients', 'pendingPaymentClientIds'));
     }
 
     public function create()
     {
         return view('company.clients.create');
+    }
+
+    public function show(Client $client)
+    {
+        $this->authorizeOwnership($client);
+
+        $quotations = Quotation::where('client_id', $client->id)
+            ->where('user_id', request()->user()->id)
+            ->with(['currency', 'payments'])
+            ->latest()
+            ->get();
+
+        $totalQuoted = $quotations->sum('grand_total');
+        $totalPaid = $quotations->sum('paid_amount');
+        $pendingPayments = Payment::whereHas('quotation', function ($q) use ($client) {
+            $q->where('client_id', $client->id)->where('user_id', request()->user()->id);
+        })->where('status', 'pending')->count();
+
+        return view('company.clients.show', compact('client', 'quotations', 'totalQuoted', 'totalPaid', 'pendingPayments'));
     }
 
     public function store(Request $request)
@@ -81,6 +110,15 @@ class WebClientController extends Controller
     public function destroy(Client $client)
     {
         $this->authorizeOwnership($client);
+
+        $hasPendingPayments = Payment::whereHas('quotation', function ($q) use ($client) {
+            $q->where('client_id', $client->id);
+        })->where('status', 'pending')->exists();
+
+        if ($hasPendingPayments) {
+            return back()->with('error', 'Cannot delete this client. There are pending payments that need to be reviewed first.');
+        }
+
         ActivityLog::log('client_deleted', $client, 'Client "' . $client->name . '" deleted');
         $client->delete();
         return redirect('/clients')->with('success', 'Client deleted.');
@@ -110,6 +148,8 @@ class WebClientController extends Controller
 
     private function authorizeOwnership(Client $client): void
     {
-        $this->authorizeOwnership($client);
+        if ($client->user_id !== request()->user()->id) {
+            abort(403, 'Unauthorized.');
+        }
     }
 }

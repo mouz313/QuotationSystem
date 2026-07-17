@@ -1,5 +1,7 @@
 @extends('client.layouts.client')
 @section('title', 'Dashboard')
+@section('header-title', 'Client Portal')
+@section('header-sub', 'Welcome back, ' . auth('client')->user()->name)
 @section('content')
 
 @php
@@ -11,32 +13,24 @@
     $declinedQuotations = $stats['declined'];
 @endphp
 
-<style>
-    .d-card{transition:all .2s ease}
-    .d-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.06)}
-    .d-row:hover{background:rgba(99,102,241,.02)}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    .fade-in{animation:fadeUp .35s ease-out both}
-</style>
-
 {{-- Hero --}}
-<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 p-6 sm:p-8 text-white mb-6 fade-in">
-    <div class="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full"></div>
-    <div class="absolute -bottom-16 -left-8 w-40 h-40 bg-white/5 rounded-full"></div>
-    <div class="relative z-10">
-        <p class="text-white/70 text-sm font-medium">Welcome back</p>
-        <h1 class="text-2xl sm:text-3xl font-bold mt-1">{{ $clientUser->name }}</h1>
-        <p class="text-white/60 text-sm mt-2">{{ $totalQuotations }} quotation{{ $totalQuotations !== 1 ? 's' : '' }} across {{ $clientUser->companies->count() }} {{ Str::plural('company', $clientUser->companies->count()) }}</p>
+<div class="fade-in" style="border-radius:.75rem;background:linear-gradient(135deg, var(--brand-700), var(--brand-500), oklch(0.50 0.14 300));padding:2rem;color:white;position:relative;overflow:hidden;margin-bottom:1rem;">
+    <div style="position:absolute;top:-3rem;right:-3rem;width:12rem;height:12rem;background:rgba(255,255,255,.08);border-radius:50%;"></div>
+    <div style="position:absolute;bottom:-4rem;left:-2rem;width:10rem;height:10rem;background:rgba(255,255,255,.04);border-radius:50%;"></div>
+    <div style="position:relative;z-index:1;">
+        <p style="color:rgba(255,255,255,.6);font-size:.75rem;font-weight:600;">Welcome back</p>
+        <h1 style="font-size:1.75rem;font-weight:800;margin-top:.25rem;">{{ $clientUser->name }}</h1>
+        <p style="color:rgba(255,255,255,.5);font-size:.8125rem;margin-top:.5rem;">{{ $totalQuotations }} quotation{{ $totalQuotations !== 1 ? 's' : '' }} across {{ $clientUser->companies->count() }} {{ Str::plural('company', $clientUser->companies->count()) }}</p>
         @if($currencyTotals->count() > 0)
-        <div class="flex flex-wrap gap-3 mt-5">
+        <div style="display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem;">
             @foreach($currencyTotals as $ct)
-            <div class="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-2.5 min-w-[120px]">
-                <p class="text-lg font-bold">{{ $ct->symbol }}{{ number_format($ct->total_value, 0) }}</p>
-                <p class="text-white/50 text-[10px] uppercase tracking-wider font-semibold">{{ $ct->code }} Total</p>
+            <div style="background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:.625rem;padding:.75rem 1rem;min-width:100px;">
+                <p style="font-size:1.125rem;font-weight:800;">{{ $ct->symbol }}{{ number_format($ct->total_value, 0) }}</p>
+                <p style="color:rgba(255,255,255,.45);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">{{ $ct->code }} Total</p>
             </div>
-            <div class="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-2.5 min-w-[120px]">
-                <p class="text-lg font-bold text-emerald-300">{{ $ct->symbol }}{{ number_format($ct->paid_amount, 0) }}</p>
-                <p class="text-white/50 text-[10px] uppercase tracking-wider font-semibold">{{ $ct->code }} Paid</p>
+            <div style="background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:.625rem;padding:.75rem 1rem;min-width:100px;">
+                <p style="font-size:1.125rem;font-weight:800;color:oklch(0.80 0.12 150);">{{ $ct->symbol }}{{ number_format($ct->paid_amount, 0) }}</p>
+                <p style="color:rgba(255,255,255,.45);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">{{ $ct->code }} Paid</p>
             </div>
             @endforeach
         </div>
@@ -44,107 +38,122 @@
     </div>
 </div>
 
-{{-- Stats Row --}}
-<div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6 fade-in" style="animation-delay:.05s">
-    <a href="/client/dashboard" class="d-card bg-white rounded-xl p-4 border border-indigo-100 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            </div>
-            <div>
-                <p class="text-xl font-bold text-gray-900">{{ $totalQuotations }}</p>
-                <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Total</p>
-            </div>
+{{-- Stat Cards --}}
+<div class="stat-grid stat-grid-5 fade-in fade-in-1" style="margin-bottom:1rem;">
+    <a href="/client/dashboard" class="stat-card" style="text-decoration:none;border-color:var(--brand-200);">
+        <div class="stat-icon brand">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <div>
+            <div class="stat-value">{{ $totalQuotations }}</div>
+            <div class="stat-label">Total</div>
         </div>
     </a>
-    <div class="d-card bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div>
-                <p class="text-xl font-bold text-emerald-600">{{ $acceptedQuotations }}</p>
-                <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Accepted</p>
-            </div>
+    <div class="stat-card" style="border-color:oklch(0.88 0.04 150);">
+        <div class="stat-icon success">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+            <div class="stat-value" style="color:var(--success-600);">{{ $acceptedQuotations }}</div>
+            <div class="stat-label">Accepted</div>
         </div>
     </div>
-    <div class="d-card bg-white rounded-xl p-4 border border-amber-100 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div>
-                <p class="text-xl font-bold text-amber-600">{{ $pendingQuotations }}</p>
-                <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Pending</p>
-            </div>
+    <div class="stat-card" style="border-color:oklch(0.88 0.06 80);">
+        <div class="stat-icon warning">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+            <div class="stat-value" style="color:var(--warning-600);">{{ $pendingQuotations }}</div>
+            <div class="stat-label">Pending</div>
         </div>
     </div>
-    <div class="d-card bg-white rounded-xl p-4 border border-violet-100 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-                <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            </div>
-            <div>
-                <p class="text-xl font-bold text-violet-600">{{ $changeQuotations }}</p>
-                <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Changes</p>
-            </div>
+    <div class="stat-card" style="border-color:oklch(0.88 0.04 300);">
+        <div class="stat-icon" style="background:oklch(0.95 0.04 300);color:oklch(0.50 0.16 300);">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        </div>
+        <div>
+            <div class="stat-value" style="color:oklch(0.50 0.16 300);">{{ $changeQuotations }}</div>
+            <div class="stat-label">Changes</div>
         </div>
     </div>
-    <div class="d-card bg-white rounded-xl p-4 border border-red-100 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div>
-                <p class="text-xl font-bold text-red-500">{{ $declinedQuotations }}</p>
-                <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Declined</p>
-            </div>
+    <div class="stat-card" style="border-color:oklch(0.88 0.04 25);">
+        <div class="stat-icon danger">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+            <div class="stat-value" style="color:var(--danger-600);">{{ $declinedQuotations }}</div>
+            <div class="stat-label">Declined</div>
         </div>
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+{{-- Pipeline --}}
+@if($totalQuotations > 0)
+@php
+    $pipelineColors = ['draft' => 'var(--surface-400)', 'sent' => 'var(--info-500)', 'opened' => 'var(--warning-500)', 'change_requested' => 'oklch(0.55 0.14 300)', 'accepted' => 'var(--success-500)', 'declined' => 'var(--danger-500)'];
+    $pipelineCounts = ['draft' => 0, 'sent' => 0, 'opened' => 0, 'change_requested' => 0, 'accepted' => $acceptedQuotations, 'declined' => $declinedQuotations];
+@endphp
+<div class="d-card fade-in fade-in-1" style="margin-bottom:1rem;">
+    <div class="d-card-header">
+        <h3>Pipeline</h3>
+        <span style="font-size:.7rem;color:var(--surface-400);">{{ $totalQuotations }} total</span>
+    </div>
+    <div style="padding:1rem 1.25rem;">
+        <div class="pipeline-bar">
+            @foreach($pipelineCounts as $status => $count)
+                @if($count > 0)
+                    <div class="pipe-seg" style="flex:{{ $count }};background:{{ $pipelineColors[$status] }};"></div>
+                @endif
+            @endforeach
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;">
+            @foreach($pipelineCounts as $status => $count)
+                @if($count > 0)
+                    <div style="display:flex;align-items:center;gap:.375rem;font-size:.7rem;color:var(--surface-600);">
+                        <span style="width:.5rem;height:.5rem;border-radius:999px;background:{{ $pipelineColors[$status] }};flex-shrink:0;"></span>
+                        <span style="font-weight:600;">{{ ucfirst(str_replace('_', ' ', $status)) }}</span>
+                        <span style="color:var(--surface-400);">{{ $count }}</span>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+    </div>
+</div>
+@endif
+
+<div class="grid-2-1 fade-in fade-in-2">
 
     {{-- Main Column --}}
-    <div class="lg:col-span-2 space-y-5">
+    <div style="display:flex;flex-direction:column;gap:1rem;">
 
         {{-- Action Required --}}
         @if($actionRequired->count() > 0)
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden fade-in" style="animation-delay:.1s">
-            <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+        <div class="d-card">
+            <div class="d-card-header" style="border-bottom-color:oklch(0.88 0.06 80);">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                    <div class="stat-icon warning" style="width:1.75rem;height:1.75rem;">
+                        <svg style="width:.875rem;height:.875rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                    </div>
+                    <h3>Action Required</h3>
                 </div>
-                <h2 class="text-sm font-bold text-gray-800">Action Required</h2>
-                <span class="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full ml-1">{{ $actionRequired->count() }}</span>
+                <span class="badge badge-opened">{{ $actionRequired->count() }}</span>
             </div>
-            <div class="divide-y divide-gray-100">
+            <div style="padding:0;">
                 @foreach($actionRequired as $q)
-                <a href="/client/quotations/{{ $q->id }}" class="d-row flex items-center justify-between px-5 py-3 group transition">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold
-                            @if($q->status === 'sent') bg-blue-500
-                            @elseif($q->status === 'opened') bg-amber-500
-                            @else bg-violet-500 @endif">
+                <a href="/client/quotations/{{ $q->id }}" style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;text-decoration:none;color:var(--surface-700);border-bottom:1px solid var(--surface-100);transition:background .15s;" onmouseover="this.style.background='var(--surface-50)'" onmouseout="this.style.background=''">
+                    <div style="display:flex;align-items:center;gap:.75rem;">
+                        <div style="width:2rem;height:2rem;border-radius:.375rem;display:flex;align-items:center;justify-content:center;color:white;font-size:.65rem;font-weight:800;flex-shrink:0;background:{{ match($q->status) { 'sent' => 'var(--info-500)', 'opened' => 'var(--warning-500)', default => 'oklch(0.55 0.14 300)' } }};">
                             {{ strtoupper(substr($q->quote_number, -2)) }}
                         </div>
                         <div>
-                            <p class="text-sm font-semibold text-gray-800 group-hover:text-indigo-600 transition">{{ $q->quote_number }}</p>
-                            <p class="text-[11px] text-gray-400">{{ $q->user?->company?->name ?? 'N/A' }} &middot; {{ $q->issue_date->format('d M Y') }}</p>
+                            <p style="font-size:.8125rem;font-weight:700;color:var(--surface-800);">{{ $q->quote_number }}</p>
+                            <p style="font-size:.6875rem;color:var(--surface-400);">{{ $q->user?->company?->name ?? 'N/A' }} &middot; {{ $q->issue_date->format('d M Y') }}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm font-bold text-gray-800">{{ $q->currency_symbol }}{{ number_format($q->grand_total, 2) }}</span>
-                        @php
-                            $sBadge = match($q->status) {
-                                'sent' => 'bg-blue-100 text-blue-700',
-                                'opened' => 'bg-amber-100 text-amber-700',
-                                'change_requested' => 'bg-violet-100 text-violet-700',
-                                default => 'bg-gray-100 text-gray-600',
-                            };
-                        @endphp
-                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full {{ $sBadge }} uppercase tracking-wider hidden sm:inline-block">{{ str_replace('_', ' ', $q->status) }}</span>
-                        <svg class="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                    <div style="display:flex;align-items:center;gap:.75rem;">
+                        <span style="font-size:.8125rem;font-weight:700;color:var(--surface-800);">{{ $q->currency_symbol }}{{ number_format($q->grand_total, 2) }}</span>
+                        <span class="badge badge-{{ $q->status }}">{{ str_replace('_', ' ', $q->status) }}</span>
+                        <svg style="width:1rem;height:1rem;color:var(--surface-300);flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </div>
                 </a>
                 @endforeach
@@ -153,74 +162,57 @@
         @endif
 
         {{-- All Quotations --}}
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden fade-in" style="animation-delay:.15s">
-            <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        <div class="d-card">
+            <div class="d-card-header">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                    <div class="stat-icon brand" style="width:1.75rem;height:1.75rem;">
+                        <svg style="width:.875rem;height:.875rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                     </div>
-                    <h2 class="text-sm font-bold text-gray-800">All Quotations</h2>
+                    <h3>All Quotations</h3>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="d-table">
                     <thead>
-                        <tr class="text-[10px] uppercase tracking-wider text-gray-400 bg-gray-50 border-b border-gray-100">
-                            <th class="px-5 py-2.5 text-left font-semibold">Quote</th>
-                            <th class="px-5 py-2.5 text-left font-semibold hidden sm:table-cell">Company</th>
-                            <th class="px-5 py-2.5 text-left font-semibold hidden md:table-cell">Date</th>
-                            <th class="px-5 py-2.5 text-right font-semibold">Amount</th>
-                            <th class="px-5 py-2.5 text-center font-semibold">Status</th>
-                            <th class="px-5 py-2.5 text-right"></th>
+                        <tr>
+                            <th>Quote</th>
+                            <th>Company</th>
+                            <th>Date</th>
+                            <th style="text-align:right;">Amount</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:right;"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody>
                         @forelse($quotations as $q)
-                        <tr class="d-row transition">
-                            <td class="px-5 py-3">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                        <tr>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:.5rem;">
+                                    <div style="width:1.75rem;height:1.75rem;border-radius:.375rem;background:linear-gradient(135deg, var(--brand-500), oklch(0.50 0.14 300));display:flex;align-items:center;justify-content:center;color:white;font-size:.55rem;font-weight:800;flex-shrink:0;">
                                         {{ strtoupper(substr($q->quote_number, -2)) }}
                                     </div>
-                                    <div>
-                                        <a href="/client/quotations/{{ $q->id }}" class="font-semibold text-gray-800 hover:text-indigo-600 transition">{{ $q->quote_number }}</a>
-                                        @if($q->isMilestone())
-                                            <span class="ml-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-600 uppercase">MS</span>
-                                        @endif
-                                    </div>
+                                    <a href="/client/quotations/{{ $q->id }}" style="font-weight:700;color:var(--surface-800);text-decoration:none;font-size:.8125rem;">{{ $q->quote_number }}</a>
+                                    @if($q->isMilestone())
+                                        <span class="badge" style="background:oklch(0.95 0.04 300);color:oklch(0.50 0.16 300);padding:.1rem .35rem;font-size:.5rem;">MS</span>
+                                    @endif
                                 </div>
                             </td>
-                            <td class="px-5 py-3 text-gray-500 hidden sm:table-cell">{{ $q->user?->company?->name ?? 'N/A' }}</td>
-                            <td class="px-5 py-3 text-gray-400 text-xs hidden md:table-cell">{{ $q->issue_date->format('d M Y') }}</td>
-                            <td class="px-5 py-3 text-right font-bold text-gray-800">{{ $q->currency_symbol }}{{ number_format($q->grand_total, 2) }}</td>
-                            <td class="px-5 py-3 text-center">
-                                @php
-                                    $badge = match($q->status) {
-                                        'draft' => 'bg-gray-100 text-gray-500',
-                                        'sent' => 'bg-blue-100 text-blue-700',
-                                        'opened' => 'bg-amber-100 text-amber-700',
-                                        'change_requested' => 'bg-violet-100 text-violet-700',
-                                        'accepted' => 'bg-emerald-100 text-emerald-700',
-                                        'declined' => 'bg-red-100 text-red-600',
-                                        default => 'bg-gray-100 text-gray-500',
-                                    };
-                                @endphp
-                                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full {{ $badge }} uppercase tracking-wider">{{ str_replace('_', ' ', $q->status) }}</span>
-                            </td>
-                            <td class="px-5 py-3 text-right">
-                                <a href="/client/quotations/{{ $q->id }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">View &rarr;</a>
-                            </td>
+                            <td style="color:var(--surface-500);">{{ $q->user?->company?->name ?? 'N/A' }}</td>
+                            <td style="color:var(--surface-400);font-size:.75rem;">{{ $q->issue_date->format('d M Y') }}</td>
+                            <td style="text-align:right;font-weight:700;color:var(--surface-800);">{{ $q->currency_symbol }}{{ number_format($q->grand_total, 2) }}</td>
+                            <td style="text-align:center;"><span class="badge badge-{{ $q->status }}">{{ str_replace('_', ' ', $q->status) }}</span></td>
+                            <td style="text-align:right;"><a href="/client/quotations/{{ $q->id }}" class="btn btn-ghost btn-icon" title="View" style="color:var(--brand-600);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </a></td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-5 py-16 text-center">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center mb-3">
-                                        <svg class="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                    </div>
-                                    <p class="text-sm text-gray-400 font-medium">No quotations yet</p>
-                                    <p class="text-xs text-gray-300 mt-1">Quotations from your companies will appear here</p>
+                            <td colspan="6" style="text-align:center;padding:3rem;">
+                                <div style="width:3rem;height:3rem;margin:0 auto;border-radius:.625rem;background:var(--surface-100);display:flex;align-items:center;justify-content:center;margin-bottom:.75rem;">
+                                    <svg style="width:1.5rem;height:1.5rem;color:var(--surface-300);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                 </div>
+                                <p style="font-size:.8125rem;color:var(--surface-400);font-weight:600;">No quotations yet</p>
+                                <p style="font-size:.75rem;color:var(--surface-300);margin-top:.25rem;">Quotations from your companies will appear here</p>
                             </td>
                         </tr>
                         @endforelse
@@ -228,7 +220,7 @@
                 </table>
             </div>
             @if($quotations->hasPages())
-            <div class="px-5 py-3 border-t border-gray-100">
+            <div style="padding:.75rem 1.25rem;border-top:1px solid var(--surface-100);">
                 {{ $quotations->links() }}
             </div>
             @endif
@@ -236,27 +228,29 @@
     </div>
 
     {{-- Right Sidebar --}}
-    <div class="space-y-5">
+    <div style="display:flex;flex-direction:column;gap:1rem;">
 
         {{-- Companies --}}
         @if($clientUser->companies->count() > 0)
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 fade-in" style="animation-delay:.1s">
-            <div class="flex items-center gap-2 mb-4">
-                <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        <div class="d-card">
+            <div class="d-card-header">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                    <div class="stat-icon info" style="width:1.75rem;height:1.75rem;">
+                        <svg style="width:.875rem;height:.875rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    </div>
+                    <h3>My Companies</h3>
                 </div>
-                <h3 class="text-sm font-bold text-gray-800">My Companies</h3>
             </div>
-            <div class="space-y-2">
+            <div style="padding:.5rem 1rem;">
                 @foreach($clientUser->companies as $company)
-                <div class="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style="background:linear-gradient(135deg, {{ $company->brand_color ?? '#4f46e5' }}, {{ $company->brand_color ?? '#7c3aed' }})">
+                <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem;border-radius:.5rem;{{ !$loop->last ? 'margin-bottom:.25rem;' : '' }}">
+                    <div style="width:2rem;height:2rem;border-radius:.375rem;display:flex;align-items:center;justify-content:center;color:white;font-size:.6rem;font-weight:800;flex-shrink:0;background:linear-gradient(135deg, {{ $company->brand_color ?? 'var(--brand-600)' }}, {{ $company->brand_color ?? 'oklch(0.50 0.14 300)' }});">
                         {{ strtoupper(substr($company->name, 0, 2)) }}
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-semibold text-gray-800 truncate">{{ $company->name }}</p>
+                    <div style="flex:1;min-width:0;">
+                        <p style="font-size:.8125rem;font-weight:700;color:var(--surface-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $company->name }}</p>
                     </div>
-                    <div class="w-2 h-2 rounded-full {{ $company->is_active ? 'bg-emerald-400' : 'bg-gray-300' }}"></div>
+                    <div style="width:.375rem;height:.375rem;border-radius:999px;background:{{ $company->isActive() ? 'var(--success-500)' : 'var(--surface-300)' }};flex-shrink:0;"></div>
                 </div>
                 @endforeach
             </div>
@@ -265,73 +259,73 @@
 
         {{-- Payment Overview --}}
         @if($currencyTotals->count() > 0)
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 fade-in" style="animation-delay:.15s">
-            <div class="flex items-center gap-2 mb-4">
-                <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="d-card">
+            <div class="d-card-header">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                    <div class="stat-icon success" style="width:1.75rem;height:1.75rem;">
+                        <svg style="width:.875rem;height:.875rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3>Payments</h3>
                 </div>
-                <h3 class="text-sm font-bold text-gray-800">Payments</h3>
             </div>
-            @foreach($currencyTotals as $ct)
-                @php
-                    $paidPct = $ct->total_value > 0 ? round(($ct->paid_amount / $ct->total_value) * 100) : 0;
-                    $outstanding = max(0, $ct->total_value - $ct->paid_amount);
-                @endphp
-                <div class="{{ !$loop->first ? 'mt-4 pt-3 border-t border-gray-100' : '' }}">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">{{ $ct->code }}</span>
+            <div style="padding:1rem 1.25rem;">
+                @foreach($currencyTotals as $ct)
+                    @php
+                        $paidPct = $ct->total_value > 0 ? round(($ct->paid_amount / $ct->total_value) * 100) : 0;
+                        $outstanding = max(0, $ct->total_value - $ct->paid_amount);
+                    @endphp
+                    <div style="{{ !$loop->first ? 'margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--surface-100);' : '' }}">
+                        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+                            <span style="font-size:.7rem;font-weight:800;color:var(--surface-600);text-transform:uppercase;letter-spacing:.04em;">{{ $ct->code }}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+                            <div style="flex:1;background:var(--surface-100);border-radius:999px;height:.375rem;">
+                                <div style="height:.375rem;border-radius:999px;background:var(--success-500);width:{{ $paidPct }}%;transition:width .4s;"></div>
+                            </div>
+                            <span style="font-size:.6875rem;font-weight:700;color:var(--surface-500);">{{ $paidPct }}%</span>
+                        </div>
+                        <div style="font-size:.75rem;display:flex;flex-direction:column;gap:.125rem;">
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="color:var(--surface-400);">Total</span>
+                                <span style="font-weight:700;color:var(--surface-600);">{{ $ct->symbol }}{{ number_format($ct->total_value, 2) }}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="color:var(--success-500);">Paid</span>
+                                <span style="font-weight:700;color:var(--success-600);">{{ $ct->symbol }}{{ number_format($ct->paid_amount, 2) }}</span>
+                            </div>
+                            @if($outstanding > 0)
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="color:var(--danger-500);">Due</span>
+                                <span style="font-weight:700;color:var(--danger-600);">{{ $ct->symbol }}{{ number_format($outstanding, 2) }}</span>
+                            </div>
+                            @endif
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="flex-1 bg-gray-100 rounded-full h-2">
-                            <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width:{{ $paidPct }}%"></div>
-                        </div>
-                        <span class="text-[11px] font-bold text-gray-500">{{ $paidPct }}%</span>
-                    </div>
-                    <div class="space-y-1 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Total</span>
-                            <span class="font-bold text-gray-700">{{ $ct->symbol }}{{ number_format($ct->total_value, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-emerald-500">Paid</span>
-                            <span class="font-bold text-emerald-600">{{ $ct->symbol }}{{ number_format($ct->paid_amount, 2) }}</span>
-                        </div>
-                        @if($outstanding > 0)
-                        <div class="flex justify-between">
-                            <span class="text-red-400">Due</span>
-                            <span class="font-bold text-red-500">{{ $ct->symbol }}{{ number_format($outstanding, 2) }}</span>
-                        </div>
-                        @endif
-                    </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
         </div>
         @endif
 
         {{-- Recent --}}
         @if($recentQuotations->count() > 0)
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 fade-in" style="animation-delay:.2s">
-            <div class="flex items-center gap-2 mb-4">
-                <div class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="d-card">
+            <div class="d-card-header">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                    <div class="stat-icon" style="width:1.75rem;height:1.75rem;background:var(--surface-100);color:var(--surface-500);">
+                        <svg style="width:.875rem;height:.875rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3>Recent</h3>
                 </div>
-                <h3 class="text-sm font-bold text-gray-800">Recent</h3>
             </div>
-            <div class="space-y-1">
+            <div style="padding:.25rem 1rem;">
                 @foreach($recentQuotations as $q)
-                <a href="/client/quotations/{{ $q->id }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition group">
-                    <div class="w-2 h-2 rounded-full flex-shrink-0
-                        @if($q->status === 'accepted') bg-emerald-400
-                        @elseif($q->status === 'declined') bg-red-400
-                        @elseif(in_array($q->status, ['sent','opened'])) bg-amber-400
-                        @elseif($q->status === 'change_requested') bg-violet-400
-                        @else bg-gray-300 @endif">
+                <a href="/client/quotations/{{ $q->id }}" style="display:flex;align-items:center;gap:.75rem;padding:.5rem;border-radius:.375rem;text-decoration:none;color:var(--surface-700);transition:background .15s;" onmouseover="this.style.background='var(--surface-50)'" onmouseout="this.style.background=''">
+                    <span style="width:.375rem;height:.375rem;border-radius:999px;flex-shrink:0;background:{{ match($q->status) { 'accepted' => 'var(--success-500)', 'declined' => 'var(--danger-500)', 'sent', 'opened' => 'var(--warning-500)', 'change_requested' => 'oklch(0.55 0.14 300)', default => 'var(--surface-300)' } }};"></span>
+                    <div style="flex:1;min-width:0;">
+                        <p style="font-size:.75rem;font-weight:700;color:var(--surface-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $q->quote_number }}</p>
+                        <p style="font-size:.625rem;color:var(--surface-400);">{{ $q->issue_date->diffForHumans() }}</p>
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-semibold text-gray-800 group-hover:text-indigo-600 transition truncate">{{ $q->quote_number }}</p>
-                        <p class="text-[10px] text-gray-400">{{ $q->issue_date->diffForHumans() }}</p>
-                    </div>
-                    <span class="text-xs font-bold text-gray-600">{{ $q->currency_symbol }}{{ number_format($q->grand_total, 0) }}</span>
+                    <span style="font-size:.75rem;font-weight:700;color:var(--surface-600);">{{ $q->currency_symbol }}{{ number_format($q->grand_total, 0) }}</span>
                 </a>
                 @endforeach
             </div>

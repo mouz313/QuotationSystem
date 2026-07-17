@@ -1,75 +1,96 @@
 @extends('layouts.admin')
 @section('title', $company->name)
 @section('content')
-<div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">{{ $company->name }}</h1>
-        <p class="text-sm text-gray-500">{{ $company->email }}</p>
-    </div>
-    <div class="flex gap-2">
-        <a href="/admin/companies/{{ $company->id }}/edit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Edit</a>
-        <a href="/admin/companies" class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Back</a>
-    </div>
-</div>
+<div class="fade-in">
+    <x-page-header title="{{ $company->name }}" subtitle="{{ $company->email }}">
+        <x-slot name="actions">
+            <a href="/admin/companies/{{ $company->id }}/edit" class="btn btn-brand btn-icon" title="Edit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </a>
+            <a href="/admin/companies" class="btn btn-ghost btn-sm" style="border:1px solid var(--surface-200);">Back</a>
+        </x-slot>
+    </x-page-header>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    <div class="bg-white rounded-xl shadow p-4">
-        <div class="text-sm text-gray-500">Status</div>
-        <div class="mt-1">
-            @if($company->status === 'active')<span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700">Active</span>
-            @elseif($company->status === 'blocked')<span class="px-3 py-1 text-sm rounded-full bg-red-100 text-red-700">Blocked</span>
-            @else<span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700">Inactive</span>
-            @endif
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.25rem;">
+        <div class="stat-card">
+            <div class="stat-icon info">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+            </div>
+            <div>
+                <div class="stat-label">Status</div>
+                <div style="margin-top:.25rem;">
+                    @if($company->status === 'active')<span class="badge badge-active">Active</span>
+                    @elseif($company->status === 'blocked')<span class="badge badge-blocked">Blocked</span>
+                    @else<span class="badge badge-inactive">Inactive</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon brand">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <div>
+                <div class="stat-label">Active Package</div>
+                @php $activePkg = $company->companyPackages->where('status', 'active')->where('end_date', '>=', now())->first(); @endphp
+                <div class="stat-value" style="font-size:1rem;">{{ $activePkg?->package?->name ?? 'No package' }}</div>
+                @if($activePkg)
+                    <div class="stat-sub">Expires: {{ $activePkg->end_date->format('M d, Y') }}</div>
+                @endif
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div>
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" style="font-size:1rem;">{{ $company->users_count ?? $company->users->count() }}</div>
+            </div>
         </div>
     </div>
-    <div class="bg-white rounded-xl shadow p-4">
-        <div class="text-sm text-gray-500">Active Package</div>
-        @php $activePkg = $company->companyPackages->where('status', 'active')->where('end_date', '>=', now())->first(); @endphp
-        <div class="mt-1 font-semibold">{{ $activePkg?->package?->name ?? 'No package' }}</div>
-        @if($activePkg)
-            <div class="text-xs text-gray-400">Expires: {{ $activePkg->end_date->format('M d, Y') }}</div>
-        @endif
-    </div>
-    <div class="bg-white rounded-xl shadow p-4">
-        <div class="text-sm text-gray-500">Total Users</div>
-        <div class="mt-1 font-semibold">{{ $company->users_count ?? $company->users->count() }}</div>
-    </div>
-</div>
 
-<div class="bg-white rounded-xl shadow p-6 mb-6">
-    <h2 class="text-lg font-semibold mb-4">Assign Package</h2>
-    <form method="POST" action="/admin/companies/{{ $company->id }}/assign-package" class="flex gap-3 items-end">
-        @csrf
-        <div class="flex-1">
-            <label class="block text-sm text-gray-600 mb-1">Package</label>
-            <select name="package_id" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                @foreach($packages as $pkg)
-                    <option value="{{ $pkg->id }}">{{ $pkg->name }} - ${{ $pkg->price }}/{{ $pkg->duration_days }}d</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">Start Date</label>
-            <input type="date" name="start_date" value="{{ now()->toDateString() }}" required
-                class="px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Assign</button>
-    </form>
-</div>
+    <x-card class="mb-4">
+        <x-slot name="title">Assign Package</x-slot>
+        <form method="POST" action="/admin/companies/{{ $company->id }}/assign-package" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;">
+            @csrf
+            <div style="flex:1;min-width:200px;">
+                <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Package</label>
+                <select name="package_id" required style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);background:var(--surface-0);outline:none;">
+                    @foreach($packages as $pkg)
+                        <option value="{{ $pkg->id }}">{{ $pkg->name }} - ${{ $pkg->price }}/{{ $pkg->duration_days }}d</option>
+                    @endforeach
+                </select>
+            </div>
+            <div style="min-width:160px;">
+                <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Start Date</label>
+                <input type="date" name="start_date" value="{{ now()->toDateString() }}" required
+                    style="padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;">
+            </div>
+            <button class="btn btn-brand">Assign</button>
+        </form>
+    </x-card>
 
-<div class="bg-white rounded-xl shadow p-6">
-    <h2 class="text-lg font-semibold mb-4">Users</h2>
-    <table class="w-full text-sm">
-        <thead><tr class="text-left text-gray-500 border-b"><th class="pb-2">Name</th><th class="pb-2">Email</th><th class="pb-2">Role</th></tr></thead>
-        <tbody>
-        @foreach($company->users as $user)
-            <tr class="border-b">
-                <td class="py-2 font-medium">{{ $user->name }}</td>
-                <td class="py-2 text-gray-600">{{ $user->email }}</td>
-                <td class="py-2"><span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">{{ $user->role }}</span></td>
-            </tr>
-        @endforeach
-        </tbody>
-    </table>
+    <x-card>
+        <x-slot name="title">Users</x-slot>
+        <table class="d-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach($company->users as $user)
+                <tr>
+                    <td style="font-weight:600;">{{ $user->name }}</td>
+                    <td>{{ $user->email }}</td>
+                    <td><span class="badge badge-draft">{{ $user->role }}</span></td>
+                </tr>
+            @endforeach
+            </tbody>
+        </table>
+    </x-card>
 </div>
 @endsection

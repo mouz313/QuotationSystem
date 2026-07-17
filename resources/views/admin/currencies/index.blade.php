@@ -1,57 +1,64 @@
 @extends('layouts.admin')
 @section('title', 'Currencies')
 @section('content')
-<div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">Currencies</h1>
-        <p class="text-sm text-gray-500">Manage available currencies for quotations</p>
-    </div>
-    <a href="/admin/currencies/create" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">+ New Currency</a>
-</div>
-<div class="bg-white rounded-xl shadow overflow-hidden">
-    <table class="w-full text-sm">
-        <thead><tr class="text-left text-gray-500 bg-gray-50">
-            <th class="px-4 py-3">Code</th>
-            <th class="px-4 py-3">Name</th>
-            <th class="px-4 py-3">Symbol</th>
-            <th class="px-4 py-3">Default</th>
-            <th class="px-4 py-3">Status</th>
-            <th class="px-4 py-3">Actions</th>
-        </tr></thead>
-        <tbody>
-        @forelse($currencies as $cur)
-            <tr class="border-t hover:bg-gray-50">
-                <td class="px-4 py-3 font-mono font-semibold">{{ $cur->code }}</td>
-                <td class="px-4 py-3">{{ $cur->name }}</td>
-                <td class="px-4 py-3 text-lg">{{ $cur->symbol }}</td>
-                <td class="px-4 py-3">
-                    @if($cur->is_default)
-                        <span class="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700">Default</span>
-                    @else
-                        <span class="text-gray-400">-</span>
-                    @endif
-                </td>
-                <td class="px-4 py-3">
-                    @if($cur->is_active)
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Active</span>
-                    @else
-                        <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-500">Inactive</span>
-                    @endif
-                </td>
-                <td class="px-4 py-3">
-                    <div class="flex gap-2">
-                        <a href="/admin/currencies/{{ $cur->id }}/edit" class="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">Edit</a>
-                        <form method="POST" action="/admin/currencies/{{ $cur->id }}" onsubmit="return confirm('Delete this currency?')">
-                            @csrf @method('DELETE')
-                            <button class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Delete</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        @empty
-            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No currencies created yet.</td></tr>
-        @endforelse
-        </tbody>
-    </table>
+<div class="fade-in">
+    <x-page-header title="Currencies" subtitle="Manage available currencies for quotations">
+        <x-slot name="actions">
+            <a href="/admin/currencies/create" class="btn btn-brand">+ New Currency</a>
+        </x-slot>
+    </x-page-header>
+
+    <x-card :padding="false" style="overflow:hidden;">
+        <table class="d-table">
+            <thead><tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Symbol</th>
+                <th>Default</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr></thead>
+            <tbody>
+            @forelse($currencies as $cur)
+                <tr>
+                    <td><span style="font-family:monospace;font-weight:600;">{{ $cur->code }}</span></td>
+                    <td>{{ $cur->name }}</td>
+                    <td style="font-size:1.125rem;">{{ $cur->symbol }}</td>
+                    <td>
+                        @if($cur->is_default)
+                            <x-status-badge status="info">Default</x-status-badge>
+                        @else
+                            <span style="color:var(--surface-400);">-</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($cur->is_active)
+                            <x-status-badge status="success">Active</x-status-badge>
+                        @else
+                            <x-status-badge>Inactive</x-status-badge>
+                        @endif
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:.25rem;">
+                            <a href="/admin/currencies/{{ $cur->id }}/edit" class="btn btn-ghost btn-icon" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </a>
+                            <form method="POST" action="/admin/currencies/{{ $cur->id }}" onsubmit="return confirm('Delete this currency?')">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-icon" title="Delete" style="color:var(--danger-600);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="6">
+                    <x-empty-state icon="info" title="No currencies created yet" description="Add your first currency to get started." action="/admin/currencies/create" actionLabel="+ New Currency" />
+                </td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </x-card>
 </div>
 @endsection

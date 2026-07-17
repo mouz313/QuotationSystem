@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\ActivityLog;
+use App\Models\Notification;
 use App\Models\Package;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -38,6 +39,17 @@ class WebCompanyController extends Controller
         $validated = $request->validate(['status' => 'required|in:active,inactive,blocked']);
         $company->update(['status' => $validated['status']]);
         ActivityLog::log('status_changed', $company, 'Changed status of ' . $company->name . ' to ' . $validated['status']);
+
+        $companyAdmin = $company->users()->where('role', 'company_admin')->first();
+        if ($companyAdmin) {
+            Notification::create([
+                'user_id' => $companyAdmin->id,
+                'type'    => 'company_status_changed',
+                'message' => "Your company status has been changed to {$validated['status']} by admin.",
+                'url'     => '/company/settings',
+            ]);
+        }
+
         event(new \App\Events\CompanyStatusChanged($company));
 
         return back()->with('success', "Company status updated to {$validated['status']}.");
@@ -68,9 +80,19 @@ class WebCompanyController extends Controller
         ActivityLog::log('package_assigned', $company, 'Assigned package to ' . $company->name);
         event(new \App\Events\PackageAssigned($company, $package));
 
-        $company->users()->where('role', 'company_admin')->first()?->notify(
-            new \App\Notifications\PackageAssignedNotification($package->name, $package->price)
-        );
+        $companyAdmin = $company->users()->where('role', 'company_admin')->first();
+        if ($companyAdmin) {
+            Notification::create([
+                'user_id' => $companyAdmin->id,
+                'type'    => 'package_assigned',
+                'message' => "Package '{$package->name}' has been assigned to your company by admin.",
+                'url'     => '/company/settings',
+            ]);
+
+            $companyAdmin->notify(
+                new \App\Notifications\PackageAssignedNotification($package->name, $package->price)
+            );
+        }
 
         return back()->with('success', "Package '{$package->name}' assigned to '{$company->name}'.");
     }

@@ -1,229 +1,192 @@
 @extends('layouts.app')
 @section('title', 'Company Settings')
 @section('content')
-<div class="max-w-3xl">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Company Settings</h1>
-        <p class="text-sm text-gray-500">Manage your company profile and details</p>
-    </div>
 
-    <div class="bg-white rounded-xl shadow overflow-hidden">
-        <div class="border-b border-gray-200">
-            <nav class="flex" role="tablist">
-                <button type="button" role="tab" onclick="switchTab('general')" id="tab-general" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600">General</button>
-                <button type="button" role="tab" onclick="switchTab('account')" id="tab-account" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">Account Details</button>
-                <button type="button" role="tab" onclick="switchTab('subscription')" id="tab-subscription" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">Subscription</button>
-                <button type="button" role="tab" onclick="switchTab('details')" id="tab-details" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">Details</button>
-            </nav>
+<div class="fade-in" style="max-width:48rem;">
+    <x-page-header title="Company Settings" subtitle="Manage your company profile and details" />
+
+    <x-card>
+        <div class="tab-group" style="border-bottom:1px solid var(--surface-100);">
+            <button type="button" role="tab" onclick="switchTab('general')" id="tab-general" class="tab-pill active">General</button>
+            <button type="button" role="tab" onclick="switchTab('account')" id="tab-account" class="tab-pill">Account Details</button>
+            <button type="button" role="tab" onclick="switchTab('subscription')" id="tab-subscription" class="tab-pill">Subscription</button>
+            <button type="button" role="tab" onclick="switchTab('details')" id="tab-details" class="tab-pill">Details</button>
         </div>
 
-        <div id="tab-content-general" class="tab-content p-6">
-            <form method="POST" action="/company/settings" enctype="multipart/form-data" class="space-y-4">
+        <div id="tab-content-general" class="tab-content" style="padding:1.5rem;">
+            <form method="POST" action="/company/settings" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:1rem;">
                 @csrf @method('PUT')
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                        <input type="text" name="name" value="{{ old('name', $company->name) }}" required
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Company Email</label>
-                        <input type="email" name="email" value="{{ old('email', $company->email) }}" required
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <x-form-input label="Company Name" name="name" :value="old('name', $company->name)" :required="true" :error="$errors->first('name')" />
+                    <x-form-input label="Company Email" name="email" type="email" :value="old('email', $company->email)" :required="true" :error="$errors->first('email')" />
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                        <input type="text" name="phone" value="{{ old('phone', $company->phone) }}"
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                        <input type="url" name="website" value="{{ old('website', $company->website) }}"
-                            placeholder="https://..."
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <x-form-input label="Phone" name="phone" :value="old('phone', $company->phone)" />
+                    <x-form-input label="Website" name="website" type="url" :value="old('website', $company->website)" placeholder="https://..." />
                 </div>
+                <x-form-textarea label="Address" name="address" :value="old('address', $company->address)" :rows="2" />
+
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <textarea name="address" rows="2"
-                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">{{ old('address', $company->address) }}</textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Company Logo</label>
-                    <p class="text-xs text-gray-400 mb-2">Upload a logo to display in the sidebar. Recommended: 200x200px, max 2MB.</p>
-                    <div class="flex items-center gap-4">
+                    <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Company Logo</label>
+                    <p style="font-size:.75rem;color:var(--surface-400);margin-bottom:.5rem;">Upload a logo to display in the sidebar. Recommended: 200x200px, max 2MB.</p>
+                    <div style="display:flex;align-items:center;gap:1rem;">
                         @if($company->logo_url)
-                            <img src="{{ $company->logo_url }}" alt="Company logo" class="w-16 h-16 rounded-lg object-cover border">
-                        @endif
-                        <div class="flex-1">
-                            <input type="file" name="logo" accept="image/*" onchange="previewLogo(event)"
-                                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                            <div id="logoPreview" class="mt-2 hidden">
-                                <img class="w-16 h-16 rounded-lg object-cover border">
+                            <div style="position:relative;">
+                                <img src="{{ $company->logo_url }}" alt="Company logo" style="width:4rem;height:4rem;border-radius:.5rem;object-fit:cover;border:1px solid var(--surface-200);">
+                                <label style="position:absolute;top:-.375rem;right:-.375rem;width:1.25rem;height:1.25rem;background:var(--danger-600);color:white;border-radius:9999px;display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Remove logo">
+                                    <input type="checkbox" name="remove_logo" value="1" class="hidden" onchange="if(this.checked){document.getElementById('currentLogo').style.display='none'}">
+                                    <svg style="width:.75rem;height:.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </label>
                             </div>
+                        @endif
+                        <div style="flex:1;">
+                            <input type="file" name="logo" accept="image/*" onchange="previewLogo(event)" style="width:100%;font-size:.8125rem;color:var(--surface-500);">
+                            <div id="logoPreview" style="margin-top:.5rem;display:none;">
+                                <img style="width:4rem;height:4rem;border-radius:.5rem;object-fit:cover;border:1px solid var(--surface-200);">
+                            </div>
+                            @if($company->logo_url)
+                            <p style="font-size:.625rem;color:var(--surface-400);margin-top:.25rem;">Click the <span style="color:var(--danger-600);font-weight:700;">x</span> on the logo to remove it, or upload a new one to replace it.</p>
+                            @endif
                         </div>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Terms & Conditions</label>
-                    <p class="text-xs text-gray-400 mb-1">Auto-filled when creating a new quotation</p>
-                    <textarea name="default_terms" rows="3"
-                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">{{ old('default_terms', $company->default_terms) }}</textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
+
+                <x-form-textarea label="Default Terms & Conditions" name="default_terms" :value="old('default_terms', $company->default_terms)" :rows="3" placeholder="Auto-filled when creating a new quotation" />
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
-                        <p class="text-xs text-gray-400 mb-1">Used in PDF quotations</p>
-                        <div class="flex gap-2">
-                            <input type="color" name="brand_color" value="{{ old('brand_color', $company->brand_color ?? '#4f46e5') }}"
-                                class="w-10 h-10 p-0.5 border rounded cursor-pointer">
-                            <input type="text" name="brand_color_hex" value="{{ old('brand_color', $company->brand_color ?? '#4f46e5') }}"
-                                oninput="document.querySelector('input[name=brand_color]').value=this.value"
-                                class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none" placeholder="#4f46e5">
+                        <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Brand Color</label>
+                        <p style="font-size:.75rem;color:var(--surface-400);margin-bottom:.5rem;">Used in PDF quotations</p>
+                        <div style="display:flex;gap:.5rem;">
+                            <input type="color" name="brand_color" value="{{ old('brand_color', $company->brand_color ?? '#4f46e5') }}" style="width:2.5rem;height:2.5rem;padding:2px;border:1px solid var(--surface-200);border-radius:.375rem;cursor:pointer;">
+                            <input type="text" name="brand_color_hex" value="{{ old('brand_color', $company->brand_color ?? '#4f46e5') }}" oninput="document.querySelector('input[name=brand_color]').value=this.value" style="flex:1;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;outline:none;" placeholder="#4f46e5">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Brand Font</label>
-                        <p class="text-xs text-gray-400 mb-1">Used in PDF quotations</p>
-                        <select name="brand_font" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
-                            @foreach(['Helvetica', 'Arial', 'Times', 'Courier', 'DejaVu Sans', 'DejaVu Serif'] as $font)
-                                <option value="{{ $font }}" {{ ($company->brand_font ?? 'Helvetica') === $font ? 'selected' : '' }}>{{ $font }}</option>
-                            @endforeach
-                        </select>
+                        <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Brand Font</label>
+                        <p style="font-size:.75rem;color:var(--surface-400);margin-bottom:.5rem;">Used in PDF quotations</p>
+                        <x-form-select name="brand_font" :value="$company->brand_font ?? 'Helvetica'" :options="['Helvetica' => 'Helvetica', 'Arial' => 'Arial', 'Times' => 'Times', 'Courier' => 'Courier', 'DejaVu Sans' => 'DejaVu Sans', 'DejaVu Serif' => 'DejaVu Serif']" />
                     </div>
                 </div>
-                <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Save Changes</button>
+                <button type="submit" class="btn btn-brand" style="align-self:flex-start;">Save Changes</button>
             </form>
         </div>
 
-        <div id="tab-content-account" class="tab-content p-6 hidden">
-            <form method="POST" action="/company/settings" class="space-y-4">
+        <div id="tab-content-account" class="tab-content" style="padding:1.5rem;display:none;">
+            <form method="POST" action="/company/settings" style="display:flex;flex-direction:column;gap:1rem;">
                 @csrf @method('PUT')
                 <input type="hidden" name="name" value="{{ $company->name }}">
                 <input type="hidden" name="email" value="{{ $company->email }}">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-800 mb-1">Account / Bank Details</h3>
-                    <p class="text-xs text-gray-400 mb-3">This information will be displayed on your quotations and PDFs for client payments.</p>
+                    <h3 style="font-size:1rem;font-weight:600;color:var(--surface-800);margin-bottom:.25rem;">Account / Bank Details</h3>
+                    <p style="font-size:.75rem;color:var(--surface-400);margin-bottom:.75rem;">This information will be displayed on your quotations and PDFs for client payments.</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Details</label>
-                    <p class="text-xs text-gray-400 mb-2">Enter your bank name, account holder, account number, IBAN, SWIFT/BIC, or any other payment details you want clients to see.</p>
-                    <textarea name="account_details" rows="8" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-mono leading-relaxed" placeholder="Bank Name: XYZ Bank&#10;Account Holder: Your Company LLC&#10;Account Number: 1234567890&#10;IBAN: PK1234567890123456789012&#10;SWIFT/BIC: XYZBPKKA&#10;Branch: Main Branch">{{ old('account_details', $company->account_details) }}</textarea>
+                    <label style="display:block;font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:.375rem;">Account Details</label>
+                    <p style="font-size:.75rem;color:var(--surface-400);margin-bottom:.5rem;">Enter your bank name, account holder, account number, IBAN, SWIFT/BIC, or any other payment details you want clients to see.</p>
+                    <textarea name="account_details" rows="8" style="width:100%;padding:.75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);background:var(--surface-0);outline:none;font-family:monospace;line-height:1.625;resize:vertical;transition:border-color .15s,box-shadow .15s;focus:border-color:var(--brand-500);focus:box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);" placeholder="Bank Name: XYZ Bank&#10;Account Holder: Your Company LLC&#10;Account Number: 1234567890&#10;IBAN: PK1234567890123456789012&#10;SWIFT/BIC: XYZBPKKA&#10;Branch: Main Branch">{{ old('account_details', $company->account_details) }}</textarea>
                 </div>
-                <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Save Account Details</button>
+                <button type="submit" class="btn btn-brand" style="align-self:flex-start;">Save Account Details</button>
             </form>
         </div>
 
-        <div id="tab-content-subscription" class="tab-content p-6 hidden">
+        <div id="tab-content-subscription" class="tab-content" style="padding:1.5rem;display:none;">
             @if($activePackage)
                 @php $pkg = $activePackage->package; @endphp
-                <div class="flex items-center justify-between mb-6">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
                     <div>
-                        <h2 class="text-lg font-semibold">Current Plan</h2>
-                        <p class="text-sm text-gray-500">Your active subscription details</p>
+                        <h2 style="font-size:1rem;font-weight:600;color:var(--surface-800);">Current Plan</h2>
+                        <p style="font-size:.8125rem;color:var(--surface-500);">Your active subscription details</p>
                     </div>
-                    <span class="px-3 py-1 text-sm font-semibold bg-indigo-100 text-indigo-700 rounded-lg">{{ $pkg->name }}</span>
+                    <span class="badge badge-draft" style="font-size:.8125rem;font-weight:600;">{{ $pkg->name }}</span>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div class="text-sm">
-                        <span class="text-gray-500">Price:</span>
-                        <span class="ml-2 font-medium">${{ number_format($pkg->price, 2) }}/{{ $pkg->duration_days }}d</span>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+                    <div style="font-size:.8125rem;">
+                        <span style="color:var(--surface-500);">Price:</span>
+                        <span style="margin-left:.5rem;font-weight:600;color:var(--surface-800);">${{ number_format($pkg->price, 2) }}/{{ $pkg->duration_days }}d</span>
                     </div>
-                    <div class="text-sm">
-                        <span class="text-gray-500">Status:</span>
-                        <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">{{ $activePackage->status }}</span>
+                    <div style="font-size:.8125rem;">
+                        <span style="color:var(--surface-500);">Status:</span>
+                        <span style="margin-left:.5rem;"><span class="badge badge-active">{{ $activePackage->status }}</span></span>
                     </div>
-                    <div class="text-sm">
-                        <span class="text-gray-500">Started:</span>
-                        <span class="ml-2 font-medium">{{ $activePackage->start_date->format('M d, Y') }}</span>
+                    <div style="font-size:.8125rem;">
+                        <span style="color:var(--surface-500);">Started:</span>
+                        <span style="margin-left:.5rem;font-weight:600;color:var(--surface-800);">{{ $activePackage->start_date->format('M d, Y') }}</span>
                     </div>
-                    <div class="text-sm">
-                        <span class="text-gray-500">Expires:</span>
-                        <span class="ml-2 font-medium">{{ $activePackage->end_date->format('M d, Y') }}</span>
-                    </div>
-                </div>
-
-                <div class="border-t pt-6">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-4">Usage</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-500">Users</span>
-                                <span class="font-medium">{{ $userCount }} / {{ $pkg->max_users }}</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $pkg->max_users > 0 ? min(100, ($userCount / $pkg->max_users) * 100) : 0 }}%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-500">Clients</span>
-                                <span class="font-medium">{{ $clientCount }} / {{ $pkg->max_clients }}</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $pkg->max_clients > 0 ? min(100, ($clientCount / $pkg->max_clients) * 100) : 0 }}%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-500">Quotations</span>
-                                <span class="font-medium">{{ $quotationCount }} / {{ $pkg->max_quotations }}</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $pkg->max_quotations > 0 ? min(100, ($quotationCount / $pkg->max_quotations) * 100) : 0 }}%"></div>
-                            </div>
-                        </div>
+                    <div style="font-size:.8125rem;">
+                        <span style="color:var(--surface-500);">Expires:</span>
+                        <span style="margin-left:.5rem;font-weight:600;color:var(--surface-800);">{{ $activePackage->end_date->format('M d, Y') }}</span>
                     </div>
                 </div>
 
-                <div class="border-t pt-6 mt-6">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-4">Available Packages</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div style="border-top:1px solid var(--surface-100);padding-top:1.5rem;">
+                    <h3 style="font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:1rem;">Usage</h3>
+                    <div style="display:flex;flex-direction:column;gap:1rem;">
+                        @php
+                            $usages = [
+                                ['label' => 'Users', 'current' => $userCount, 'max' => $pkg->max_users],
+                                ['label' => 'Clients', 'current' => $clientCount, 'max' => $pkg->max_clients],
+                                ['label' => 'Quotations', 'current' => $quotationCount, 'max' => $pkg->max_quotations],
+                            ];
+                        @endphp
+                        @foreach($usages as $u)
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:.25rem;">
+                                <span style="font-size:.8125rem;color:var(--surface-500);">{{ $u['label'] }}</span>
+                                <span style="font-size:.8125rem;font-weight:600;color:var(--surface-800);">{{ $u['current'] }} / {{ $u['max'] }}</span>
+                            </div>
+                            <div style="width:100%;height:.5rem;background:var(--surface-100);border-radius:9999px;">
+                                <div style="height:.5rem;border-radius:9999px;background:var(--brand-600);transition:width .3s;" role="progressbar" style="width:{{ $u['max'] > 0 ? min(100, ($u['current'] / $u['max']) * 100) : 0 }}%;"></div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div style="border-top:1px solid var(--surface-100);padding-top:1.5rem;margin-top:1.5rem;">
+                    <h3 style="font-size:.8125rem;font-weight:600;color:var(--surface-700);margin-bottom:1rem;">Available Packages</h3>
+                    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:1rem;">
                         @foreach($packages as $p)
-                            <div class="border rounded-lg p-4 {{ $p->id === $pkg->id ? 'border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50' : 'border-gray-200' }}">
-                                <div class="text-sm font-semibold {{ $p->id === $pkg->id ? 'text-indigo-700' : 'text-gray-800' }}">{{ $p->name }}</div>
-                                <div class="text-xs text-gray-500 mt-1">${{ number_format($p->price, 2) }}/{{ $p->duration_days }}d</div>
-                                <ul class="text-xs text-gray-500 mt-2 space-y-1">
+                            <div style="padding:1rem;border:1px solid {{ $p->id === $pkg->id ? 'var(--brand-500)' : 'var(--surface-200)' }};border-radius:.5rem;{{ $p->id === $pkg->id ? 'background:var(--brand-50);box-shadow:0 0 0 3px oklch(0.55 0.17 275 / .1);' : '' }}">
+                                <div style="font-size:.8125rem;font-weight:600;color:{{ $p->id === $pkg->id ? 'var(--brand-700)' : 'var(--surface-800)' }};">{{ $p->name }}</div>
+                                <div style="font-size:.75rem;color:var(--surface-500);margin-top:.25rem;">${{ number_format($p->price, 2) }}/{{ $p->duration_days }}d</div>
+                                <ul style="font-size:.75rem;color:var(--surface-500);margin-top:.5rem;display:flex;flex-direction:column;gap:.25rem;">
                                     <li>{{ $p->max_users }} users</li>
                                     <li>{{ $p->max_clients }} clients</li>
                                     <li>{{ $p->max_quotations }} quotations</li>
                                 </ul>
                                 @if($p->id !== $pkg->id)
-                                    <div class="mt-2 text-xs text-gray-400">Contact admin to switch</div>
+                                    <div style="margin-top:.5rem;font-size:.75rem;color:var(--surface-400);">Contact admin to switch</div>
                                 @else
-                                    <div class="mt-2 text-xs text-indigo-600 font-medium">Current plan</div>
+                                    <div style="margin-top:.5rem;font-size:.75rem;color:var(--brand-600);font-weight:600;">Current plan</div>
                                 @endif
                             </div>
                         @endforeach
                     </div>
                 </div>
             @else
-                <h2 class="text-lg font-semibold mb-1">Subscription</h2>
-                <div class="text-sm text-gray-500 mb-4">Your current plan and usage</div>
-                <p class="text-gray-500 text-sm">No active subscription. Contact admin to assign a package.</p>
+                <h2 style="font-size:1rem;font-weight:600;color:var(--surface-800);margin-bottom:.25rem;">Subscription</h2>
+                <p style="font-size:.8125rem;color:var(--surface-500);margin-bottom:1rem;">Your current plan and usage</p>
+                <p style="color:var(--surface-500);font-size:.8125rem;">No active subscription. Contact admin to assign a package.</p>
             @endif
         </div>
 
-        <div id="tab-content-details" class="tab-content p-6 hidden">
-            <h2 class="text-lg font-semibold mb-1">Company Details</h2>
-            <div class="text-sm text-gray-500 mb-4">Read-only information</div>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-                <div><span class="text-gray-500">Status:</span>
-                    @if($company->status === 'active')
-                        <span class="ml-2 px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Active</span>
-                    @elseif($company->status === 'blocked')
-                        <span class="ml-2 px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">Blocked</span>
-                    @else
-                        <span class="ml-2 px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700">Inactive</span>
-                    @endif
+        <div id="tab-content-details" class="tab-content" style="padding:1.5rem;display:none;">
+            <h2 style="font-size:1rem;font-weight:600;color:var(--surface-800);margin-bottom:.25rem;">Company Details</h2>
+            <p style="font-size:.8125rem;color:var(--surface-500);margin-bottom:1rem;">Read-only information</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:.8125rem;">
+                <div>
+                    <span style="color:var(--surface-500);">Status:</span>
+                    <span style="margin-left:.5rem;"><span class="badge badge-{{ $company->status }}">{{ ucfirst($company->status) }}</span></span>
                 </div>
-                <div><span class="text-gray-500">Registered:</span> <span class="ml-2">{{ $company->created_at->format('M d, Y') }}</span></div>
+                <div>
+                    <span style="color:var(--surface-500);">Registered:</span>
+                    <span style="margin-left:.5rem;font-weight:600;color:var(--surface-800);">{{ $company->created_at->format('M d, Y') }}</span>
+                </div>
             </div>
         </div>
-    </div>
+    </x-card>
 </div>
 
 <script>
@@ -231,20 +194,16 @@ function previewLogo(e) {
     const file = e.target.files[0];
     if (!file) return;
     const preview = document.getElementById('logoPreview');
-    preview.classList.remove('hidden');
+    preview.style.display = 'block';
     preview.querySelector('img').src = URL.createObjectURL(file);
 }
 
 function switchTab(tab) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    document.querySelectorAll('.tab-btn').forEach(el => {
-        el.classList.remove('border-indigo-600', 'text-indigo-600');
-        el.classList.add('border-transparent', 'text-gray-500');
-    });
-    document.getElementById('tab-content-' + tab).classList.remove('hidden');
-    const btn = document.getElementById('tab-' + tab);
-    btn.classList.remove('border-transparent', 'text-gray-500');
-    btn.classList.add('border-indigo-600', 'text-indigo-600');
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-content-' + tab).style.display = 'block';
+    document.getElementById('tab-' + tab).classList.add('active');
 }
 </script>
+
 @endsection

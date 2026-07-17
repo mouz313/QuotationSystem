@@ -9,11 +9,78 @@ use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\Quotation;
 use App\Models\QuotationStatusLog;
+use Barryvdh\DomPDF\Facades\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class QuotationController extends Controller
 {
+    public function index(Request $request)
+    {
+        $clientUser = $request->user('client');
+        $companyIds = $clientUser->companies()->pluck('companies.id');
+        $companies = $clientUser->companies;
+
+        $query = Quotation::whereHas('user', fn($q) => $q->whereIn('company_id', $companyIds))
+            ->where('status', '!=', 'draft')
+            ->with(['user.company', 'currency']);
+
+        $search = $request->input('search', '');
+        $status = $request->input('status', '');
+        $companyId = $request->input('company', '');
+
+        if ($search) {
+            $query->where('quote_number', 'like', "%{$search}%");
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($companyId) {
+            $query->whereHas('user', fn($q) => $q->where('company_id', $companyId));
+        }
+
+        $quotations = $query->latest()->paginate(12)->appends($request->query());
+
+        return view('client.quotations.index', compact('quotations', 'companies', 'search', 'status', 'companyId'));
+    }
+
+    public function paymentHistory(Request $request)
+    {
+        $clientUser = $request->user('client');
+
+        $query = Payment::where('client_user_id', $clientUser->id)
+            ->with(['quotation.user.company', 'quotation.currency']);
+
+        $status = $request->input('status', '');
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $payments = $query->latest()->paginate(15)->appends($request->query());
+
+        $stats = [
+            'approved' => (clone $query)->where('status', 'approved')->count(),
+            'pending'  => (clone $query)->where('status', 'pending')->count(),
+            'rejected' => (clone $query)->where('status', 'rejected')->count(),
+        ];
+
+        return view('client.payments.index', compact('payments', 'status', 'stats'));
+    }
+
+    public function pdf(Request $request, Quotation $quotation)
+    {
+        if (!$this->userCanAccess($request, $quotation)) {
+            abort(403);
+        }
+
+        $quotation->load(['client', 'items', 'currency', 'tax', 'user.company', 'attachments']);
+        $company = $quotation->user->company;
+
+        $pdf = Pdf::loadView('admin.quotations.pdf', compact('quotation', 'company'));
+        $pdf->setOption('isRemoteEnabled', true);
+        return $pdf->download($quotation->quote_number . '.pdf');
+    }
+
     private function userCanAccess(Request $request, Quotation $quotation): bool
     {
         $companyIds = $request->user('client')->companies()->pluck('companies.id');
@@ -26,7 +93,7 @@ class QuotationController extends Controller
             abort(403);
         }
 
-        $quotation->load(['items', 'currency', 'tax', 'client', 'user.company', 'payments', 'statusLogs' => function ($q) {
+        $quotation->load(['items', 'currency', 'tax', 'client', 'user.company', 'payments', 'attachments', 'statusLogs' => function ($q) {
             $q->latest();
         }, 'revisions' => function ($q) {
             $q->latest();
@@ -145,6 +212,27 @@ class QuotationController extends Controller
         return back()->with('success', 'Payment submitted successfully. Awaiting company verification.');
     }
 
+    public function paymentReceipt(Request $request, Quotation $quotation)
+    {
+        if (!$this->userCanAccess($request, $quotation)) {
+            abort(403);
+        }
+
+        $quotation->load(['items', 'currency', 'tax', 'client', 'user.company', 'payments' => function ($q) {
+            $q->where('status', 'approved')->with('clientUser', 'quotationItem');
+        }]);
+
+        if ($quotation->payments->isEmpty()) {
+            return back()->with('error', 'No approved payments to generate a receipt for.');
+        }
+
+        $company = $quotation->user->company ?? null;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('client.quotations.payment-receipt', compact('quotation', 'company'));
+        $pdf->setOption('isRemoteEnabled', true);
+        return $pdf->download('Payment-Receipt-' . $quotation->quote_number . '.pdf');
+    }
+
     private function changeStatus(Request $request, Quotation $quotation, string $newStatus, ?string $notes = null)
     {
         if (!$this->userCanAccess($request, $quotation)) {
@@ -205,6 +293,10 @@ class QuotationController extends Controller
             'change_requested' => 'Change request submitted.',
             default           => "Status changed to {$newStatus}.",
         };
+
+        if ($newStatus === 'accepted' && !$quotation->invoice_number) {
+            $quotation->generateInvoiceNumber();
+        }
 
         return back()->with('success', $message);
     }

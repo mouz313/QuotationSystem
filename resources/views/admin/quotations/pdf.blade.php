@@ -134,26 +134,32 @@
     <div class="meta-section">
         <table class="meta-grid">
             <tr>
-                <td style="width:18%;">
+                <td style="width:16%;">
                     <div class="meta-label">Issue Date</div>
                     <div class="meta-value">{{ $quotation->issue_date->format('d M, Y') }}</div>
                 </td>
-                <td style="width:18%;">
+                <td style="width:16%;">
                     <div class="meta-label">Expiry Date</div>
                     <div class="meta-value">{{ $quotation->expiry_date ? $quotation->expiry_date->format('d M, Y') : 'N/A' }}</div>
                 </td>
-                <td style="width:18%;">
+                <td style="width:16%;">
                     <div class="meta-label">Currency</div>
                     <div class="meta-value">{{ $quotation->currency->code ?? 'N/A' }}</div>
                 </td>
-                <td style="width:18%;">
+                <td style="width:16%;">
                     <div class="meta-label">Status</div>
                     <div class="meta-value"><span class="badge status-{{ $quotation->status }}">{{ str_replace('_', ' ', ucfirst($quotation->status)) }}</span></div>
                 </td>
-                <td style="width:18%;">
+                <td style="width:16%;">
                     <div class="meta-label">Payment</div>
                     <div class="meta-value"><span class="badge badge-{{ $pStatus }}">{{ ucfirst($pStatus) }}</span></div>
                 </td>
+                @if($quotation->invoice_number)
+                <td style="width:16%;">
+                    <div class="meta-label">Invoice #</div>
+                    <div class="meta-value">{{ $quotation->invoice_number }}</div>
+                </td>
+                @endif
             </tr>
         </table>
     </div>
@@ -294,6 +300,33 @@
             <h4 style="font-size:9px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; color:#276749;">Account / Bank Details</h4>
             <p>{{ $company->account_details }}</p>
         </div>
+    </div>
+    @endif
+
+    {{-- ATTACHMENTS --}}
+    @if($quotation->attachments->count() > 0)
+    <div class="section-block">
+        <h4>Attachments</h4>
+        <table class="items" style="margin-top:4px;">
+            <thead>
+                <tr>
+                    <th style="width:5%;">#</th>
+                    <th style="width:50%;">File Name</th>
+                    <th style="width:20%;">Type</th>
+                    <th style="width:15%;">Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($quotation->attachments as $att)
+                <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td style="font-weight:600;">{{ $att->original_name }}</td>
+                    <td>{{ strtoupper(pathinfo($att->original_name, PATHINFO_EXTENSION)) }}</td>
+                    <td>{{ round($att->size / 1024) }}KB</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
     @endif
 

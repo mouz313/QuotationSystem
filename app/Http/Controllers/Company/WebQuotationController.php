@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
 use App\Mail\ClientWelcomeMail;
+use App\Mail\PaymentReminderMail;
 use App\Mail\PaymentReviewedMail;
 use App\Mail\QuotationStatusMail;
 use App\Mail\SendQuotationMail;
@@ -15,6 +16,7 @@ use App\Models\Item;
 use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\Quotation;
+use App\Models\QuotationAttachment;
 use App\Models\QuotationNote;
 use App\Models\QuotationRevision;
 use App\Models\QuotationStatusLog;
@@ -94,6 +96,8 @@ class WebQuotationController extends Controller
             'items.*.end_date'         => 'nullable|date',
             'terms_conditions'     => 'nullable|string',
             'payment_instructions' => 'nullable|string|max:2000',
+            'attachments'          => 'nullable|array|max:5',
+            'attachments.*'        => 'file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240',
         ]);
 
         if ($validated['type'] === 'milestone') {
@@ -138,6 +142,18 @@ class WebQuotationController extends Controller
                 $quotation->items()->create($item);
             }
 
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('quotation-attachments', 'public');
+                    $quotation->attachments()->create([
+                        'filename'      => basename($path),
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime_type'     => $file->getMimeType(),
+                        'size'          => $file->getSize(),
+                    ]);
+                }
+            }
+
             return $quotation;
         });
 
@@ -149,7 +165,7 @@ class WebQuotationController extends Controller
     public function show(Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
-        $quotation->load(['client', 'items', 'currency', 'tax', 'notes.user', 'activityLogs.user', 'statusLogs', 'revisions', 'payments.clientUser', 'payments.reviewer']);
+        $quotation->load(['client', 'items', 'currency', 'tax', 'notes.user', 'activityLogs.user', 'statusLogs', 'revisions', 'payments.clientUser', 'payments.reviewer', 'attachments']);
         return view('company.quotations.show', compact('quotation'));
     }
 
@@ -164,7 +180,7 @@ class WebQuotationController extends Controller
         $currencies = Currency::active()->get();
         $taxes    = Tax::active()->get();
         $items    = Item::where('user_id', request()->user()->id)->get();
-        $quotation->load(['items', 'currency', 'tax', 'client']);
+        $quotation->load(['items', 'currency', 'tax', 'client', 'attachments']);
 
         return view('company.quotations.edit', compact('quotation', 'clients', 'currencies', 'taxes', 'items'));
     }
@@ -194,6 +210,10 @@ class WebQuotationController extends Controller
             'items.*.end_date'         => 'nullable|date',
             'terms_conditions'     => 'nullable|string',
             'payment_instructions' => 'nullable|string|max:2000',
+            'attachments'          => 'nullable|array|max:5',
+            'attachments.*'        => 'file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240',
+            'remove_attachments'   => 'nullable|array',
+            'remove_attachments.*' => 'integer|exists:quotation_attachments,id',
         ]);
 
         if ($validated['type'] === 'milestone') {
@@ -245,6 +265,22 @@ class WebQuotationController extends Controller
                 $quotation->items()->create($item);
             }
 
+            if (!empty($validated['remove_attachments'])) {
+                $quotation->attachments()->whereIn('id', $validated['remove_attachments'])->delete();
+            }
+
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('quotation-attachments', 'public');
+                    $quotation->attachments()->create([
+                        'filename'      => basename($path),
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime_type'     => $file->getMimeType(),
+                        'size'          => $file->getSize(),
+                    ]);
+                }
+            }
+
             if ($wasChangeRequested) {
                 $this->logStatusChange($quotation, 'change_requested', 'sent', $request->user(), 'Quotation amended and re-sent');
                 $quotation->update(['viewed_at' => null]);
@@ -277,12 +313,15 @@ class WebQuotationController extends Controller
         $this->authorizeOwnership($quotation);
 
         $newQuotation = DB::transaction(function () use ($quotation) {
+            $todayCount = Quotation::whereDate('created_at', now()->toDateString())->lockForUpdate()->count();
+            $quoteNumber = 'QT-' . now()->format('Ymd') . '-' . str_pad($todayCount + 1, 4, '0', STR_PAD_LEFT);
+
             $clone = Quotation::create([
                 'user_id'          => $quotation->user_id,
                 'client_id'        => $quotation->client_id,
                 'currency_id'      => $quotation->currency_id,
                 'tax_id'           => $quotation->tax_id,
-                'quote_number'     => $quotation->quote_number . '-COPY',
+                'quote_number'     => $quoteNumber,
                 'type'             => $quotation->type,
                 'issue_date'       => now()->toDateString(),
                 'expiry_date'      => null,
@@ -387,7 +426,7 @@ class WebQuotationController extends Controller
     public function pdf(Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
-        $quotation->load(['client', 'items', 'currency', 'tax', 'user.company']);
+        $quotation->load(['client', 'items', 'currency', 'tax', 'user.company', 'attachments']);
 
         $company = $quotation->user->company;
         $pdf = Pdf::loadView('admin.quotations.pdf', compact('quotation', 'company'));
@@ -430,6 +469,16 @@ class WebQuotationController extends Controller
             'message' => "Quotation {$quotation->quote_number} status changed to {$validated['status']}.",
             'url' => "/quotations/{$quotation->id}",
         ]);
+
+        $clientUserId = $quotation->client->client_user_id;
+        if ($clientUserId) {
+            Notification::create([
+                'client_user_id' => $clientUserId,
+                'type' => 'status_changed',
+                'message' => "Quotation {$quotation->quote_number} status has been changed to " . str_replace('_', ' ', $validated['status']) . ".",
+                'url' => "/client/quotations/{$quotation->id}",
+            ]);
+        }
 
         return back()->with('success', "Quotation marked as {$validated['status']}.");
     }
@@ -530,6 +579,16 @@ class WebQuotationController extends Controller
             'url' => "/quotations/{$quotation->id}",
         ]);
 
+        $clientUserId = $quotation->client->client_user_id;
+        if ($clientUserId) {
+            Notification::create([
+                'client_user_id' => $clientUserId,
+                'type' => 'payment_approved',
+                'message' => "Your payment of {$quotation->currency_symbol}" . number_format($payment->amount, 2) . " for {$quotation->quote_number} has been approved.",
+                'url' => "/client/quotations/{$quotation->id}",
+            ]);
+        }
+
         return back()->with('success', 'Payment approved. Total paid: ' . $quotation->currency_symbol . number_format($totalPaid, 2));
     }
 
@@ -565,7 +624,142 @@ class WebQuotationController extends Controller
             'url' => "/quotations/{$quotation->id}",
         ]);
 
+        $clientUserId = $quotation->client->client_user_id;
+        if ($clientUserId) {
+            Notification::create([
+                'client_user_id' => $clientUserId,
+                'type' => 'payment_rejected',
+                'message' => "Your payment of {$quotation->currency_symbol}" . number_format($payment->amount, 2) . " for {$quotation->quote_number} has been rejected.",
+                'url' => "/client/quotations/{$quotation->id}",
+            ]);
+        }
+
         return back()->with('success', 'Payment rejected.');
+    }
+
+    public function bulkApprovePayments(Request $request, Quotation $quotation)
+    {
+        $this->authorizeOwnership($quotation);
+
+        $request->validate(['payment_ids' => 'required|array|min:1']);
+
+        $payments = Payment::whereIn('id', $request->payment_ids)
+            ->where('quotation_id', $quotation->id)
+            ->where('status', 'pending')
+            ->get();
+
+        if ($payments->isEmpty()) {
+            return back()->with('error', 'No valid pending payments selected.');
+        }
+
+        foreach ($payments as $payment) {
+            $payment->update([
+                'status'      => 'approved',
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+
+            try {
+                $clientEmail = $quotation->client->clientUser?->email ?? $quotation->client->email;
+                if ($clientEmail) {
+                    Mail::to($clientEmail)->send(
+                        new PaymentReviewedMail($quotation, $payment, $request->user()->name)
+                    );
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Email failed (bulk payment approved): ' . $e->getMessage());
+            }
+        }
+
+        $totalPaid = $quotation->payments()->where('status', 'approved')->sum('amount');
+        $paymentStatus = $totalPaid >= $quotation->grand_total ? 'paid' : 'partial';
+        $quotation->update([
+            'payment_status' => $paymentStatus,
+            'paid_amount'    => $totalPaid,
+            'paid_at'        => $paymentStatus === 'paid' ? now() : null,
+        ]);
+
+        Notification::create([
+            'user_id' => $quotation->user_id,
+            'type' => 'payment_approved',
+            'message' => $payments->count() . " payments approved for {$quotation->quote_number} (total: {$quotation->currency_symbol}" . number_format($payments->sum('amount'), 2) . ").",
+            'url' => "/quotations/{$quotation->id}",
+        ]);
+
+        $clientUserId = $quotation->client->client_user_id;
+        if ($clientUserId) {
+            Notification::create([
+                'client_user_id' => $clientUserId,
+                'type' => 'payment_approved',
+                'message' => $payments->count() . " of your payments for {$quotation->quote_number} have been approved (total: {$quotation->currency_symbol}" . number_format($payments->sum('amount'), 2) . ").",
+                'url' => "/client/quotations/{$quotation->id}",
+            ]);
+        }
+
+        return back()->with('success', $payments->count() . ' payment(s) approved.');
+    }
+
+    public function bulkRejectPayments(Request $request, Quotation $quotation)
+    {
+        $this->authorizeOwnership($quotation);
+
+        $request->validate([
+            'payment_ids'       => 'required|array|min:1',
+            'rejection_reason'  => 'nullable|string|max:500',
+        ]);
+
+        $payments = Payment::whereIn('id', $request->payment_ids)
+            ->where('quotation_id', $quotation->id)
+            ->where('status', 'pending')
+            ->get();
+
+        if ($payments->isEmpty()) {
+            return back()->with('error', 'No valid pending payments selected.');
+        }
+
+        foreach ($payments as $payment) {
+            $notes = $payment->notes;
+            if ($request->rejection_reason) {
+                $notes = $notes ? $notes . "\n\nRejection reason: " . $request->rejection_reason : "Rejection reason: " . $request->rejection_reason;
+            }
+
+            $payment->update([
+                'status'      => 'rejected',
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'notes'       => $notes,
+            ]);
+
+            try {
+                $clientEmail = $quotation->client->clientUser?->email ?? $quotation->client->email;
+                if ($clientEmail) {
+                    Mail::to($clientEmail)->send(
+                        new PaymentReviewedMail($quotation, $payment, $request->user()->name)
+                    );
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Email failed (bulk payment rejected): ' . $e->getMessage());
+            }
+        }
+
+        Notification::create([
+            'user_id' => $quotation->user_id,
+            'type' => 'payment_rejected',
+            'message' => $payments->count() . " payments rejected for {$quotation->quote_number}.",
+            'url' => "/quotations/{$quotation->id}",
+        ]);
+
+        $clientUserId = $quotation->client->client_user_id;
+        if ($clientUserId) {
+            Notification::create([
+                'client_user_id' => $clientUserId,
+                'type' => 'payment_rejected',
+                'message' => $payments->count() . " of your payments for {$quotation->quote_number} have been rejected.",
+                'url' => "/client/quotations/{$quotation->id}",
+            ]);
+        }
+
+        return back()->with('success', $payments->count() . ' payment(s) rejected.');
     }
 
     public function updatePaymentInstructions(Request $request, Quotation $quotation)
@@ -615,10 +809,27 @@ class WebQuotationController extends Controller
 
     public function exportCsv(Request $request)
     {
-        $quotations = Quotation::where('user_id', $request->user()->id)
-            ->with('client')
-            ->latest()
-            ->get();
+        $query = Quotation::where('user_id', $request->user()->id)
+            ->with('client');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('quote_number', 'like', "%{$search}%")
+                  ->orWhereHas('client', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
+            });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('from_date')) {
+            $query->whereDate('issue_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('issue_date', '<=', $request->to_date);
+        }
+
+        $quotations = $query->latest()->get();
 
         $filename = 'quotations-' . now()->format('Y-m-d') . '.csv';
         $handle = fopen('php://temp', 'w+');
@@ -656,6 +867,46 @@ class WebQuotationController extends Controller
             'changed_by_id'   => $changedBy->id,
             'notes'           => $notes,
         ]);
+    }
+
+    public function sendReminder(Quotation $quotation)
+    {
+        $this->authorizeOwnership($quotation);
+
+        if ($quotation->payment_status === 'paid') {
+            return back()->with('error', 'This quotation is already fully paid.');
+        }
+
+        $clientEmail = $quotation->client->email;
+        if (!$clientEmail) {
+            return back()->with('error', 'Client has no email address.');
+        }
+
+        try {
+            Mail::to($clientEmail)->send(new PaymentReminderMail($quotation, request()->user()->name));
+        } catch (\Exception $e) {
+            \Log::warning('Payment reminder email failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to send reminder email. Please try again.');
+        }
+
+        ActivityLog::log('payment_reminder_sent', $quotation, 'Payment reminder sent for "' . $quotation->quote_number . '"');
+
+        return back()->with('success', 'Payment reminder sent to ' . $clientEmail . '.');
+    }
+
+    public function destroy(Quotation $quotation)
+    {
+        $this->authorizeOwnership($quotation);
+
+        if ($quotation->payments()->where('status', 'pending')->exists()) {
+            return back()->with('error', 'Cannot delete a quotation with pending payments.');
+        }
+
+        $quoteNumber = $quotation->quote_number;
+        $quotation->delete();
+        ActivityLog::log('deleted', null, 'Deleted quotation ' . $quoteNumber);
+
+        return redirect('/quotations')->with('success', 'Quotation ' . $quoteNumber . ' deleted.');
     }
 
     private function authorizeOwnership(Quotation $quotation): void

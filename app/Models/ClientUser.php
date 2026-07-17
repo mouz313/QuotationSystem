@@ -49,4 +49,14 @@ class ClientUser extends Authenticatable
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'client_user_id');
+    }
+
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->where('is_read', false)->count();
+    }
 }
