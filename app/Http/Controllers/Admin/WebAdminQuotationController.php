@@ -35,7 +35,7 @@ class WebAdminQuotationController extends Controller
             $query->whereDate('issue_date', '<=', $request->to_date);
         }
 
-        $quotations = $query->latest()->paginate(20)->withQueryString();
+        $quotations = $query->latest()->paginate(setting_int('pagination_per_page', 20))->withQueryString();
         $companies = \App\Models\Company::all();
 
         return view('admin.quotations.index', compact('quotations', 'companies'));

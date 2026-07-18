@@ -34,7 +34,7 @@ class DashboardController extends Controller
             });
         }
 
-        $logs = $query->paginate(25)->withQueryString();
+        $logs = $query->paginate(setting_int('pagination_activity', 25))->withQueryString();
 
         return view('company.activity-log', compact('logs'));
     }
@@ -171,6 +171,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $companyIds = User::where('company_id', $user->company_id)->pluck('id');
         $year = $period === 'all_time'
             ? (Quotation::whereIn('user_id', $companyIds)->min('issue_date')?->year ?? now()->year)
             : now()->year;

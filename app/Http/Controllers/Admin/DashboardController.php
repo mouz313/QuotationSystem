@@ -31,7 +31,7 @@ class DashboardController extends Controller
 
         $recentCompanies = Company::withCount('users')
             ->with('companyPackages.package')
-            ->latest()->limit(10)->get();
+            ->latest()->limit(setting_int('dashboard_limit', 10))->get();
 
         // Chart data: Monthly revenue last 12 months
         $monthlyRevenue = Quotation::where('status', 'accepted')
@@ -64,16 +64,18 @@ class DashboardController extends Controller
             ->selectRaw('companies.name, SUM(quotations.grand_total) as total')
             ->groupBy('companies.name')
             ->orderByDesc('total')
-            ->limit(10)
+            ->limit(setting_int('dashboard_limit', 10))
             ->get();
 
-        // Chart data: New companies growth
-        $companyGrowth = Company::where('created_at', '>=', now()->subMonths(12))
-            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
+        $recentActivity = ActivityLog::with('user')->latest()->limit(setting_int('dashboard_limit', 10))->get();
+
+        // Chart data: New companies per month (last 12 months)
+        $monthlyCompanies = Company::where('created_at', '>=', now()->subMonths(12))
+            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as total')
             ->groupBy('month')
             ->orderBy('month')
             ->get()
-            ->pluck('count', 'month')
+            ->pluck('total', 'month')
             ->toArray();
 
         $growthLabels = [];
@@ -81,10 +83,8 @@ class DashboardController extends Controller
         for ($i = 11; $i >= 0; $i--) {
             $key = now()->subMonths($i)->format('Y-m');
             $growthLabels[] = now()->subMonths($i)->format('M Y');
-            $growthData[] = $companyGrowth[$key] ?? 0;
+            $growthData[] = $monthlyCompanies[$key] ?? 0;
         }
-
-        $recentActivity = ActivityLog::with('user')->latest()->limit(10)->get();
 
         return view('admin.dashboard', compact(
             'stats', 'recentCompanies',

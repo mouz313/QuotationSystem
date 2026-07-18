@@ -39,7 +39,7 @@ class QuotationController extends Controller
             $query->whereHas('user', fn($q) => $q->where('company_id', $companyId));
         }
 
-        $quotations = $query->latest()->paginate(12)->appends($request->query());
+        $quotations = $query->latest()->paginate(setting_int('pagination_client', 12))->appends($request->query());
 
         return view('client.quotations.index', compact('quotations', 'companies', 'search', 'status', 'companyId'));
     }
@@ -56,7 +56,7 @@ class QuotationController extends Controller
             $query->where('status', $status);
         }
 
-        $payments = $query->latest()->paginate(15)->appends($request->query());
+        $payments = $query->latest()->paginate(setting_int('pagination_per_page', 15))->appends($request->query());
 
         $stats = [
             'approved' => (clone $query)->where('status', 'approved')->count(),
@@ -83,6 +83,9 @@ class QuotationController extends Controller
 
     private function userCanAccess(Request $request, Quotation $quotation): bool
     {
+        if (!$quotation->relationLoaded('user')) {
+            $quotation->load('user');
+        }
         $companyIds = $request->user('client')->companies()->pluck('companies.id');
         return $companyIds->contains($quotation->user->company_id);
     }
@@ -160,6 +163,7 @@ class QuotationController extends Controller
         $validated = $request->validate([
             'quotation_item_id' => 'nullable|exists:quotation_items,id',
             'amount'            => 'required|numeric|min:0.01',
+            'payment_method'    => 'nullable|string|max:50',
             'notes'             => 'nullable|string|max:1000',
             'proof'             => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
@@ -177,6 +181,12 @@ class QuotationController extends Controller
             if ($validated['amount'] > $remaining) {
                 return back()->with('error', "Amount exceeds remaining balance of {$quotation->currency_symbol}" . number_format($remaining, 2) . " for this milestone.");
             }
+        } else {
+            $totalPaid = $quotation->payments()->where('status', 'approved')->sum('amount');
+            $remaining = max(0, $quotation->grand_total - $totalPaid);
+            if ($validated['amount'] > $remaining) {
+                return back()->with('error', "Amount exceeds remaining balance of {$quotation->currency_symbol}" . number_format($remaining, 2) . ".");
+            }
         }
 
         $proofPath = null;
@@ -189,6 +199,7 @@ class QuotationController extends Controller
             'quotation_item_id' => $validated['quotation_item_id'] ?? null,
             'client_user_id'    => $request->user('client')->id,
             'amount'            => $validated['amount'],
+            'payment_method'    => $validated['payment_method'] ?? null,
             'proof'             => $proofPath,
             'notes'             => $validated['notes'],
             'status'            => 'pending',

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class QuotationItem extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'quotation_id', 'item_title', 'item_description',
         'quantity', 'unit_price', 'subtotal',
@@ -31,6 +33,9 @@ class QuotationItem extends Model
 
     public function getPaidAmountAttribute(): float
     {
+        if ($this->relationLoaded('payments')) {
+            return (float) $this->payments->where('status', 'approved')->sum('amount');
+        }
         return (float) $this->payments()->where('status', 'approved')->sum('amount');
     }
 

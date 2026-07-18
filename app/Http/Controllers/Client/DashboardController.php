@@ -32,7 +32,7 @@ class DashboardController extends Controller
         $quotations = $baseQuery()
             ->with(['client', 'currency', 'user.company', 'payments'])
             ->latest()
-            ->paginate(12);
+            ->paginate(setting_int('pagination_client', 12));
 
         $recentQuotations = (clone $baseQuery())
             ->with(['client', 'currency', 'user.company'])

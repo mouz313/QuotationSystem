@@ -21,7 +21,7 @@
                 </div>
                 <div style="display:flex;gap:.5rem;padding-top:.5rem;">
                     <button type="submit" class="btn btn-brand">Create Package</button>
-                    <a href="/admin/packages" class="btn btn-ghost" style="border:1px solid var(--surface-200);">Cancel</a>
+                    <a href="/admin/packages" class="btn btn-ghost" style="border:1px solid var(--gray-200);">Cancel</a>
                 </div>
             </form>
         </div>

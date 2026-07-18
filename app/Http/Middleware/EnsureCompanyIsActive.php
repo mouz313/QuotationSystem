@@ -19,8 +19,10 @@ class EnsureCompanyIsActive
                     'message' => 'Your company has been blocked. Contact support.',
                 ], 403);
             }
-            auth()->logout();
-            return redirect('/login')->with('error', 'Your company has been blocked. Contact support.');
+            if (!$user->isSuperAdmin()) {
+                auth()->logout();
+                return redirect('/login')->with('error', 'Your company has been blocked. Contact support.');
+            }
         }
 
         return $next($request);

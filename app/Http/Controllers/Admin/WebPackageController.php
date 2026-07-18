@@ -65,6 +65,10 @@ class WebPackageController extends Controller
 
     public function destroy(Package $package)
     {
+        if ($package->price == 0) {
+            return back()->with('error', 'The Free package cannot be deleted. You can edit it instead.');
+        }
+
         if ($package->companyPackages()->where('status', 'active')->exists()) {
             return back()->with('error', 'Cannot delete a package with active subscriptions.');
         }

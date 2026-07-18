@@ -21,13 +21,16 @@ use App\Http\Controllers\Client\Auth\LoginController as ClientLogin;
 use App\Http\Controllers\Client\Auth\ResetPasswordController as ClientResetPassword;
 use App\Http\Controllers\Client\DashboardController as ClientDashboard;
 use App\Http\Controllers\Client\ProfileController as ClientProfile;
+use App\Http\Controllers\Client\PaymentGatewayController as ClientPaymentGateway;
 use App\Http\Controllers\Client\QuotationController as ClientQuotation;
 use App\Http\Controllers\Company\DashboardController as CompanyDashboard;
 use App\Http\Controllers\Company\WebClientController as CompanyClient;
 use App\Http\Controllers\Company\WebItemController as CompanyItem;
 use App\Http\Controllers\Company\WebQuotationController as CompanyQuotation;
-use App\Http\Controllers\CompanySettingsController;
+use App\Http\Controllers\Admin\PackageOrderController as AdminPackageOrder;
+use App\Http\Controllers\Company\PackageController as CompanyPackage;
 use App\Http\Controllers\Company\UserController as CompanyUser;
+use App\Http\Controllers\CompanySettingsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,9 +42,11 @@ Route::get('/', function () {
 // ── Guest Auth ──
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'webLogin'])->middleware('throttle:5,1');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
 });
-Route::post('/logout', [AuthController::class, 'webLogout'])->middleware('auth')->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // ── Admin Panel ──
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -149,7 +154,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Admin Notifications
     Route::get('/notifications', function () {
-        $notifications = auth()->user()->notifications()->latest()->paginate(25);
+        $notifications = auth()->user()->notifications()->latest()->paginate(setting_int('pagination_activity', 25));
         return view('admin.notifications.index', compact('notifications'));
     })->name('notifications.index');
     Route::post('/notifications/mark-all-read', function () {
@@ -194,6 +199,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::put('/settings/pusher', [AdminSettings::class, 'updatePusher'])->name('settings.pusher');
         Route::put('/settings/email', [AdminSettings::class, 'updateEmail'])->name('settings.email');
         Route::post('/settings/email/test', [AdminSettings::class, 'sendTestEmail'])->name('settings.email.test');
+        Route::put('/settings/platform', [AdminSettings::class, 'updatePlatform'])->name('settings.platform');
+    });
+
+    // Package Orders
+    Route::middleware('permission:packages.manage')->prefix('package-orders')->name('package-orders.')->group(function () {
+        Route::get('/', [AdminPackageOrder::class, 'index'])->name('index');
+        Route::post('/{order}/approve', [AdminPackageOrder::class, 'approve'])->name('approve');
+        Route::post('/{order}/reject', [AdminPackageOrder::class, 'reject'])->name('reject');
     });
 });
 
@@ -203,6 +216,9 @@ Route::get('/pages/{page}', function (\App\Models\Page $page) {
     return view('pages.show', compact('page'));
 })->name('pages.show');
 
+// Stripe Webhook (no auth, CSRF exempt)
+Route::post('/webhooks/stripe', [ClientPaymentGateway::class, 'handleWebhook'])->name('webhooks.stripe');
+
 // ── Client Portal (no auth) ──
 Route::prefix('client')->name('client.')->group(function () {
     Route::middleware('guest:client')->group(function () {
@@ -211,7 +227,7 @@ Route::prefix('client')->name('client.')->group(function () {
         Route::get('/forgot-password', [ClientForgotPassword::class, 'showLinkRequestForm'])->name('password.request');
         Route::post('/forgot-password', [ClientForgotPassword::class, 'sendResetLinkEmail'])->name('password.email')->middleware('throttle:5,1');
         Route::get('/reset-password/{token}', [ClientResetPassword::class, 'showResetForm'])->name('password.reset');
-        Route::post('/reset-password', [ClientResetPassword::class, 'reset'])->name('password.update');
+        Route::post('/reset-password', [ClientResetPassword::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
     });
     Route::post('/logout', [ClientLogin::class, 'logout'])->middleware('auth:client')->name('logout');
 
@@ -226,12 +242,18 @@ Route::prefix('client')->name('client.')->group(function () {
         Route::get('/quotations/{quotation}/receipt', [ClientQuotation::class, 'paymentReceipt'])->name('quotations.receipt');
         Route::get('/quotations/{quotation}/pdf', [ClientQuotation::class, 'pdf'])->name('quotations.pdf');
         Route::get('/payments', [ClientQuotation::class, 'paymentHistory'])->name('payments.index');
+
+        // Payment Gateway routes
+        Route::post('/quotations/{quotation}/pay-stripe', [ClientPaymentGateway::class, 'createStripeSession'])->name('quotations.pay-stripe');
+        Route::post('/quotations/{quotation}/pay-paypal', [ClientPaymentGateway::class, 'createPayPalOrder'])->name('quotations.pay-paypal');
+        Route::get('/quotations/{quotation}/payment-success', [ClientPaymentGateway::class, 'handleSuccess'])->name('quotations.payment-success');
+        Route::get('/quotations/{quotation}/payment-cancel', [ClientPaymentGateway::class, 'handleCancel'])->name('quotations.payment-cancel');
         Route::get('/profile', [ClientProfile::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ClientProfile::class, 'updateProfile'])->name('profile.update');
         Route::put('/profile/password', [ClientProfile::class, 'updatePassword'])->name('profile.password');
 
         Route::get('/notifications', function () {
-            $notifications = auth('client')->user()->notifications()->latest()->paginate(25);
+            $notifications = auth('client')->user()->notifications()->latest()->paginate(setting_int('pagination_activity', 25));
             return view('notifications.client-index', compact('notifications'));
         })->name('notifications.index');
         Route::post('/notifications/mark-all-read', function () {
@@ -273,7 +295,7 @@ Route::middleware(['auth', 'company.active'])->group(function () {
     })->name('notifications.read');
 
     Route::get('/notifications', function () {
-        $notifications = auth()->user()->notifications()->latest()->paginate(25);
+        $notifications = auth()->user()->notifications()->latest()->paginate(setting_int('pagination_activity', 25));
         return view('notifications.index', compact('notifications'));
     })->name('notifications.index');
 
@@ -341,4 +363,13 @@ Route::middleware(['auth', 'company.active'])->group(function () {
             Route::put('/settings', [CompanySettingsController::class, 'update'])->name('settings.update');
         });
     });
+
+    // Package routes (all company users)
+    Route::get('/packages', [CompanyPackage::class, 'browse'])->name('packages.browse');
+    Route::get('/packages/subscription', [CompanyPackage::class, 'subscription'])->name('packages.subscription');
+    Route::get('/packages/orders', [CompanyPackage::class, 'orderHistory'])->name('packages.orders');
+    Route::get('/packages/{package}', [CompanyPackage::class, 'show'])->name('packages.show');
+    Route::post('/packages/{package}/purchase', [CompanyPackage::class, 'purchase'])->name('packages.purchase');
+    Route::get('/packages/payment-success', [CompanyPackage::class, 'handlePurchaseSuccess'])->name('packages.payment-success');
+    Route::get('/packages/payment-cancel', [CompanyPackage::class, 'handlePurchaseCancel'])->name('packages.payment-cancel');
 });

@@ -19,7 +19,7 @@
         </x-card>
         <div style="display:flex;gap:.5rem;margin-top:1rem;">
             <button type="submit" class="btn btn-brand">Update Currency</button>
-            <a href="/admin/currencies" class="btn btn-ghost" style="border:1px solid var(--surface-200);">Cancel</a>
+            <a href="/admin/currencies" class="btn btn-ghost" style="border:1px solid var(--gray-200);">Cancel</a>
         </div>
     </form>
 </div>

@@ -68,8 +68,8 @@ class DatabaseSeeder extends Seeder
 
         // ── Default Packages ──
         $free = Package::create([
-            'name' => 'Free', 'description' => 'Try it out — 7-day free trial with limited access.', 'price' => 0,
-            'duration_days' => 7, 'max_users' => 1, 'max_clients' => 3, 'max_quotations' => 10,
+            'name' => 'Free', 'description' => 'Try it out — free plan with basic features.', 'price' => 0,
+            'duration_days' => 30, 'max_users' => 1, 'max_clients' => 3, 'max_quotations' => 10,
         ]);
         $starter = Package::create([
             'name' => 'Starter', 'description' => 'Perfect for small businesses.', 'price' => 9.99,

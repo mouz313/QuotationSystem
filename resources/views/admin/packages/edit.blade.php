@@ -20,15 +20,15 @@
                     <x-form-input label="Max Quotations" name="max_quotations" type="number" :value="old('max_quotations', $package->max_quotations)" :required="true" />
                 </div>
                 <div>
-                    <label style="display:flex;align-items:center;gap:.5rem;font-size:.8125rem;color:var(--surface-700);">
+                    <label style="display:flex;align-items:center;gap:.5rem;font-size:.8125rem;color:var(--gray-700);">
                         <input type="checkbox" name="is_active" value="1" {{ old('is_active', $package->is_active) ? 'checked' : '' }}
-                            style="border-radius:3px;border:1px solid var(--surface-300);accent-color:var(--brand-600);">
+                            style="border-radius:3px;border:1px solid var(--gray-300);accent-color:var(--brand-600);">
                         Active
                     </label>
                 </div>
                 <div style="display:flex;gap:.5rem;padding-top:.5rem;">
                     <button type="submit" class="btn btn-brand">Update Package</button>
-                    <a href="/admin/packages" class="btn btn-ghost" style="border:1px solid var(--surface-200);">Cancel</a>
+                    <a href="/admin/packages" class="btn btn-ghost" style="border:1px solid var(--gray-200);">Cancel</a>
                 </div>
             </form>
         </div>

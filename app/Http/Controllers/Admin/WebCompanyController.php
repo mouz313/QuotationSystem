@@ -20,7 +20,7 @@ class WebCompanyController extends Controller
             ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%"))
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->latest()
-            ->paginate(15)
+            ->paginate(setting_int('pagination_per_page', 15))
             ->withQueryString();
 
         return view('admin.companies.index', compact('companies'));

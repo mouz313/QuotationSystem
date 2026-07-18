@@ -2,23 +2,35 @@
 
 namespace App\Models;
 
+use App\Services\FileCleanupService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::deleting(function (Payment $payment) {
+            FileCleanupService::deletePaymentProof($payment);
+        });
+    }
     protected $fillable = [
-        'quotation_id', 'quotation_item_id', 'client_user_id', 'amount', 'proof', 'notes',
+        'quotation_id', 'quotation_item_id', 'client_user_id', 'amount', 'payment_method', 'transaction_id', 'gateway_response', 'paid_via', 'proof', 'notes',
         'status', 'reviewed_by', 'reviewed_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'amount'      => 'decimal:2',
-            'reviewed_at' => 'datetime',
+            'amount'           => 'decimal:2',
+            'reviewed_at'      => 'datetime',
+            'gateway_response' => 'array',
         ];
     }
 

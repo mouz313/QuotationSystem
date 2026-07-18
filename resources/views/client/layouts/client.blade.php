@@ -102,7 +102,7 @@
                                 </form>
                             @endif
                         </div>
-                        @php $notifs = auth('client')->user()->notifications()->latest()->limit(15)->get(); @endphp
+                        @php $notifs = auth('client')->user()->notifications()->latest()->limit(setting_int('notification_limit', 15))->get(); @endphp
                         @forelse($notifs as $notif)
                             <form method="POST" action="/client/notifications/{{ $notif->id }}/read" class="block">
                                 @csrf

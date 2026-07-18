@@ -32,7 +32,7 @@ class WebCompanyUserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->paginate(15)->withQueryString();
+        $users = $query->paginate(setting_int('pagination_per_page', 15))->withQueryString();
         $companies = Company::latest()->get();
 
         return view('admin.company-users.index', compact('users', 'companies'));

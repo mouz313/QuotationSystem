@@ -21,7 +21,7 @@ class WebItemController extends Controller
             });
         }
 
-        $items = $items->latest()->paginate(15)->withQueryString();
+        $items = $items->latest()->paginate(setting_int('pagination_per_page', 15))->withQueryString();
         $defaultCurrency = \App\Models\Currency::where('is_default', true)->first();
 
         return view('company.items.index', compact('items', 'defaultCurrency'));
@@ -36,7 +36,7 @@ class WebItemController extends Controller
     {
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:2000',
             'unit_price'  => 'required|numeric|min:0',
         ]);
 
@@ -55,11 +55,11 @@ class WebItemController extends Controller
 
     public function update(Request $request, Item $item)
     {
-        if ($item->user_id !== $request->user()->id) abort(403);
+        $this->authorizeOwnership($item);
 
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:2000',
             'unit_price'  => 'required|numeric|min:0',
         ]);
 
@@ -104,8 +104,6 @@ class WebItemController extends Controller
 
     private function authorizeOwnership(Item $item): void
     {
-        if ($item->user_id !== request()->user()->id) {
-            abort(403, 'Unauthorized.');
-        }
+        $this->authorize('update', $item);
     }
 }

@@ -6,7 +6,7 @@
         <div>
             <h3>{{ $title }}</h3>
             @if($subtitle)
-                <p style="font-size:.7rem;color:var(--surface-400);margin-top:.125rem;">{{ $subtitle }}</p>
+                <p style="font-size:.7rem;color:var(--gray-400);margin-top:.125rem;">{{ $subtitle }}</p>
             @endif
         </div>
         @if(isset($actions) && $actions->isNotEmpty())

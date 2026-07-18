@@ -18,6 +18,7 @@ class SettingsController extends Controller
             'social'   => Setting::getGroup('social'),
             'pusher'   => Setting::getGroup('pusher'),
             'email'    => Setting::getGroup('email'),
+            'platform' => Setting::getGroup('platform'),
         ];
 
         $tab = request('tab', 'general');
@@ -108,6 +109,26 @@ class SettingsController extends Controller
         ActivityLog::log('updated', null, 'Updated email settings');
 
         return redirect('/admin/settings?tab=email')->with('success', 'Email settings updated.');
+    }
+
+    public function updatePlatform(Request $request)
+    {
+        $validated = $request->validate([
+            'pagination_per_page'          => 'required|integer|min:5|max:100',
+            'pagination_client'            => 'required|integer|min:5|max:100',
+            'pagination_activity'          => 'required|integer|min:5|max:100',
+            'dashboard_limit'              => 'required|integer|min:3|max:50',
+            'notification_limit'           => 'required|integer|min:5|max:50',
+            'max_file_size_attachments'    => 'required|integer|min:1024|max:51200',
+            'max_file_size_payment_proof'  => 'required|integer|min:512|max:20480',
+            'max_file_size_logo'           => 'required|integer|min:256|max:10240',
+            'max_attachments_per_quotation' => 'required|integer|min:1|max:20',
+        ]);
+
+        Setting::setGroup('platform', $validated);
+        ActivityLog::log('updated', null, 'Updated platform settings');
+
+        return redirect('/admin/settings?tab=platform')->with('success', 'Platform settings updated.');
     }
 
     public function sendTestEmail(Request $request)

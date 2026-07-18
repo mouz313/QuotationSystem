@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Client;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -11,7 +12,16 @@ use Illuminate\Support\Facades\Storage;
 
 class Company extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::deleting(function (Company $company) {
+            \App\Services\FileCleanupService::deleteCompanyFiles($company);
+        });
+    }
     protected $fillable = ['name', 'email', 'phone', 'address', 'website', 'default_terms', 'logo', 'brand_color', 'brand_font', 'account_details', 'status'];
 
     public function getLogoUrlAttribute(): ?string
@@ -27,6 +37,11 @@ class Company extends Model
     public function quotations(): HasManyThrough
     {
         return $this->hasManyThrough(Quotation::class, User::class);
+    }
+
+    public function clients()
+    {
+        return Client::whereIn('user_id', $this->users()->pluck('id'));
     }
 
     public function companyPackages(): HasMany

@@ -25,7 +25,7 @@ class UserController extends Controller
             });
         }
 
-        $users = $users->latest()->paginate(15)->withQueryString();
+        $users = $users->latest()->paginate(setting_int('pagination_per_page', 15))->withQueryString();
 
         return view('company.users.index', compact('users'));
     }
@@ -62,13 +62,13 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        if ($user->company_id !== request()->user()->company_id) abort(403);
+        $this->ensureSameCompany($user);
         return view('company.users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
-        if ($user->company_id !== $request->user()->company_id) abort(403);
+        $this->ensureSameCompany($user);
 
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
@@ -94,7 +94,7 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user)
     {
-        if ($user->company_id !== $request->user()->company_id) abort(403);
+        $this->ensureSameCompany($user);
         if ($user->id === $request->user()->id) {
             return back()->with('error', 'Cannot remove yourself.');
         }
@@ -110,7 +110,7 @@ class UserController extends Controller
         $users = User::where('company_id', $request->user()->company_id)
             ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%"))
             ->latest()
-            ->paginate(15);
+            ->paginate(setting_int('pagination_per_page', 15));
 
         return response()->json(['status' => 'success', 'data' => $users]);
     }
@@ -153,17 +153,13 @@ class UserController extends Controller
 
     public function apiShow(Request $request, User $user): JsonResponse
     {
-        if ($user->company_id !== $request->user()->company_id) {
-            return response()->json(['status' => 'error', 'message' => 'Access denied.'], 403);
-        }
+        $this->ensureSameCompany($user, true);
         return response()->json(['status' => 'success', 'data' => $user->only('id', 'name', 'email', 'role', 'created_at')]);
     }
 
     public function apiUpdate(Request $request, User $user): JsonResponse
     {
-        if ($user->company_id !== $request->user()->company_id) {
-            return response()->json(['status' => 'error', 'message' => 'Access denied.'], 403);
-        }
+        $this->ensureSameCompany($user, true);
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -176,13 +172,21 @@ class UserController extends Controller
 
     public function apiDestroy(Request $request, User $user): JsonResponse
     {
-        if ($user->company_id !== $request->user()->company_id) {
-            return response()->json(['status' => 'error', 'message' => 'Access denied.'], 403);
-        }
+        $this->ensureSameCompany($user, true);
         if ($user->id === $request->user()->id) {
             return response()->json(['status' => 'error', 'message' => 'Cannot delete yourself.'], 409);
         }
         $user->delete();
         return response()->json(['status' => 'success', 'message' => 'User removed.']);
+    }
+
+    private function ensureSameCompany(User $user, bool $json = false): void
+    {
+        if ($user->company_id !== request()->user()->company_id) {
+            if ($json) {
+                abort(response()->json(['status' => 'error', 'message' => 'Access denied.'], 403));
+            }
+            abort(403, 'Unauthorized.');
+        }
     }
 }

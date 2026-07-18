@@ -328,6 +328,30 @@
 
                 {{-- Submit Payment --}}
                 @if(in_array($quotation->status, ['accepted', 'sent', 'opened']) && $pStatus !== 'paid')
+                <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+                    @if(config('services.stripe.key'))
+                    <form method="POST" action="/client/quotations/{{ $quotation->id }}/pay-stripe" style="flex:1;">
+                        @csrf
+                        <button type="submit" style="width:100%;padding:.625rem;background:#635BFF;color:white;font-size:.8125rem;font-weight:700;border-radius:.5rem;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:.5rem;" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
+                            <svg style="width:1rem;height:1rem;" viewBox="0 0 24 24" fill="currentColor"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-7.076-2.19L3.37 21.83C5.278 22.966 8.292 24 12.03 24c2.62 0 4.72-.642 6.215-1.866 1.648-1.35 2.477-3.277 2.477-5.738 0-4.17-2.508-5.879-6.746-7.246z"/></svg>
+                            Pay with Stripe
+                        </button>
+                    </form>
+                    @endif
+                    @if(config('services.paypal.client_id'))
+                    <form method="POST" action="/client/quotations/{{ $quotation->id }}/pay-paypal" style="flex:1;">
+                        @csrf
+                        <button type="submit" style="width:100%;padding:.625rem;background:#0070BA;color:white;font-size:.8125rem;font-weight:700;border-radius:.5rem;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:.5rem;" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
+                            <svg style="width:1rem;height:1rem;" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797H9.602c-.536 0-.99.394-1.077.926L7.076 21.337z"/></svg>
+                            Pay with PayPal
+                        </button>
+                    </form>
+                    @endif
+                </div>
+                @if(config('services.stripe.key') || config('services.paypal.client_id'))
+                <div style="text-align:center;margin-bottom:1rem;font-size:.6875rem;color:var(--surface-400);">— or pay manually below —</div>
+                @endif
+
                 <button onclick="toggleForm('paymentForm')" style="width:100%;padding:.625rem;background:var(--success-600);color:white;font-size:.8125rem;font-weight:700;border-radius:.5rem;transition:background .15s;box-shadow:0 1px 3px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;gap:.5rem;" onmouseover="this.style.background='var(--success-700)'" onmouseout="this.style.background='var(--success-600)'">
                     <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     Submit Payment
@@ -358,6 +382,18 @@
                                 <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--surface-400);font-weight:600;font-size:.8125rem;">{{ $quotation->currency_symbol }}</span>
                                 <input type="number" name="amount" step="0.01" min="0.01" required style="width:100%;padding:.5rem .75rem;padding-left:1.75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);background:var(--surface-0);outline:none;" placeholder="0.00">
                             </div>
+                        </div>
+                        <div>
+                            <label class="qs-label" style="display:block;margin-bottom:.25rem;">Payment Method</label>
+                            <select name="payment_method" style="width:100%;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);background:var(--surface-0);outline:none;">
+                                <option value="">Select method...</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="cash">Cash</option>
+                                <option value="check">Check</option>
+                                <option value="credit_card">Credit Card</option>
+                                <option value="online">Online Payment</option>
+                                <option value="other">Other</option>
+                            </select>
                         </div>
                         <div>
                             <label class="qs-label" style="display:block;margin-bottom:.25rem;">Payment Proof</label>

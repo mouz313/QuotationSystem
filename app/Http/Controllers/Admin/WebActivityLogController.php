@@ -26,7 +26,7 @@ class WebActivityLogController extends Controller
             });
         }
 
-        $logs = $query->paginate(25)->withQueryString();
+        $logs = $query->paginate(setting_int('pagination_activity', 25))->withQueryString();
         $users = \App\Models\User::orderBy('name')->get();
 
         return view('admin.activity-log.index', compact('logs', 'users'));

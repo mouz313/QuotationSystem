@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\FileCleanupService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +11,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quotation extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::deleting(function (Quotation $quotation) {
+            FileCleanupService::deleteQuotationFiles($quotation);
+        });
+    }
     protected $fillable = [
         'user_id', 'client_id', 'currency_id', 'tax_id',
         'quote_number', 'type', 'issue_date', 'expiry_date',
@@ -93,6 +104,9 @@ class Quotation extends Model
 
     public function getPendingPaymentsAttribute()
     {
+        if ($this->relationLoaded('payments')) {
+            return $this->payments->where('status', 'pending');
+        }
         return $this->payments()->where('status', 'pending')->get();
     }
 
@@ -103,12 +117,21 @@ class Quotation extends Model
 
     public function getMilestoneProgressAttribute(): array
     {
-        $items = $this->items()->orderBy('sort_order')->get();
+        if ($this->relationLoaded('items')) {
+            $items = $this->items->sortBy('sort_order');
+        } else {
+            $items = $this->items()->orderBy('sort_order')->get();
+        }
+
         $totalMilestones = $items->count();
         $completedPayments = 0;
 
         foreach ($items as $item) {
-            $approvedTotal = $item->payments()->where('status', 'approved')->sum('amount');
+            if ($item->relationLoaded('payments')) {
+                $approvedTotal = $item->payments->where('status', 'approved')->sum('amount');
+            } else {
+                $approvedTotal = $item->payments()->where('status', 'approved')->sum('amount');
+            }
             if ($approvedTotal >= $item->subtotal) {
                 $completedPayments++;
             }

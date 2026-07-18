@@ -8,9 +8,9 @@
         </a>
         @endif
         <div>
-            <h1 style="font-size:1.375rem;font-weight:800;color:var(--surface-900);">{{ $title }}</h1>
+            <h1 style="font-size:1.375rem;font-weight:800;color:var(--gray-900);">{{ $title }}</h1>
             @if($subtitle)
-                <p style="font-size:.8125rem;color:var(--surface-500);margin-top:.125rem;">{{ $subtitle }}</p>
+                <p style="font-size:.8125rem;color:var(--gray-500);margin-top:.125rem;">{{ $subtitle }}</p>
             @endif
         </div>
     </div>

@@ -2,7 +2,13 @@
 @section('title', 'Quotation ' . $quotation->quote_number)
 @section('content')
 
-<x-page-header back="/quotations" title="{{ $quotation->quote_number }}" subtitle="Issued {{ $quotation->issue_date->format('M d, Y') }} · Expires {{ $quotation->expiry_date?->format('M d, Y') ?? 'N/A' }}@if($quotation->invoice_number) · Invoice: <span style="font-weight:700;">{{ $quotation->invoice_number }}</span>@endif">
+@php
+    $subtitle = 'Issued ' . $quotation->issue_date->format('M d, Y') . ' · Expires ' . ($quotation->expiry_date?->format('M d, Y') ?? 'N/A');
+    if ($quotation->invoice_number) {
+        $subtitle .= ' · Invoice: ' . $quotation->invoice_number;
+    }
+@endphp
+<x-page-header back="/quotations" title="{{ $quotation->quote_number }}" :subtitle="$subtitle">
     <x-slot name="actions">
         <x-status-badge :status="$quotation->status">{{ ucfirst($quotation->status) }}</x-status-badge>
         @if($quotation->isMilestone())

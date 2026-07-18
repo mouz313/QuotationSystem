@@ -6,11 +6,11 @@
         name="{{ $name }}"
         value="{{ request($name, $value) }}"
         placeholder="{{ $placeholder }}"
-        style="flex:1;padding:.5rem .75rem;border:1px solid var(--surface-200);border-radius:.5rem;font-size:.8125rem;color:var(--surface-800);outline:none;transition:border-color .15s;focus:border-color:var(--brand-500);"
+        style="flex:1;padding:.5rem .75rem;border:1px solid var(--gray-200);border-radius:.5rem;font-size:.8125rem;color:var(--gray-800);outline:none;transition:border-color .15s;focus:border-color:var(--brand-500);"
     >
     {{ $slot }}
-    <button type="submit" class="btn btn-ghost" style="border:1px solid var(--surface-200);">Search</button>
+    <button type="submit" class="btn btn-ghost" style="border:1px solid var(--gray-200);">Search</button>
     @if(request($name))
-        <a href="{{ strtok(request()->url(), '?') }}" class="btn btn-ghost" style="color:var(--surface-500);font-size:.8125rem;">Clear</a>
+        <a href="{{ strtok(request()->url(), '?') }}" class="btn btn-ghost" style="color:var(--gray-500);font-size:.8125rem;">Clear</a>
     @endif
 </form>

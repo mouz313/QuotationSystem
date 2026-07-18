@@ -34,7 +34,7 @@ class WebQuotationController extends Controller
     public function index(Request $request)
     {
         $query = Quotation::where('user_id', $request->user()->id)
-            ->with(['client', 'currency']);
+            ->with(['client', 'currency', 'payments']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -53,7 +53,7 @@ class WebQuotationController extends Controller
             $query->whereDate('issue_date', '<=', $request->to_date);
         }
 
-        $quotations = $query->latest()->paginate(15)->withQueryString();
+        $quotations = $query->latest()->paginate(setting_int('pagination_per_page', 15))->withQueryString();
 
         return view('company.quotations.index', compact('quotations'));
     }
@@ -266,6 +266,7 @@ class WebQuotationController extends Controller
             }
 
             if (!empty($validated['remove_attachments'])) {
+                \App\Services\FileCleanupService::deleteAttachmentsByIds($validated['remove_attachments']);
                 $quotation->attachments()->whereIn('id', $validated['remove_attachments'])->delete();
             }
 
@@ -311,6 +312,7 @@ class WebQuotationController extends Controller
     public function clone(Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load(['items']);
 
         $newQuotation = DB::transaction(function () use ($quotation) {
             $todayCount = Quotation::whereDate('created_at', now()->toDateString())->lockForUpdate()->count();
@@ -329,10 +331,11 @@ class WebQuotationController extends Controller
                 'tax_percentage'   => $quotation->tax_percentage,
                 'grand_total'      => $quotation->grand_total,
                 'terms_conditions' => $quotation->terms_conditions,
+                'payment_instructions' => $quotation->payment_instructions,
                 'status'           => 'draft',
             ]);
 
-            foreach ($quotation->items()->orderBy('sort_order')->get() as $item) {
+            foreach ($quotation->items->sortBy('sort_order') as $item) {
                 $clone->items()->create($item->only(['item_title', 'item_description', 'quantity', 'unit_price', 'subtotal', 'start_date', 'end_date', 'sort_order']));
             }
 
@@ -437,6 +440,7 @@ class WebQuotationController extends Controller
     public function updateStatus(Request $request, Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load(['client.clientUser', 'currency']);
 
         $validated = $request->validate(['status' => 'required|in:sent,accepted,declined']);
         $oldStatus = $quotation->status;
@@ -486,6 +490,7 @@ class WebQuotationController extends Controller
     public function updatePayment(Request $request, Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load(['client.clientUser', 'currency']);
 
         $validated = $request->validate([
             'payment_status' => 'required|in:unpaid,partial,paid',
@@ -531,6 +536,7 @@ class WebQuotationController extends Controller
     public function approvePayment(Request $request, Quotation $quotation, Payment $payment)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load(['client.clientUser', 'currency', 'items.payments']);
         if ($payment->quotation_id !== $quotation->id) abort(404);
 
         $payment->update([
@@ -543,8 +549,8 @@ class WebQuotationController extends Controller
 
         if ($quotation->isMilestone()) {
             $allMilestonesPaid = true;
-            foreach ($quotation->items()->get() as $item) {
-                $itemPaid = $item->payments()->where('status', 'approved')->sum('amount');
+            foreach ($quotation->items as $item) {
+                $itemPaid = $item->payments->where('status', 'approved')->sum('amount');
                 if ($itemPaid < $item->subtotal) {
                     $allMilestonesPaid = false;
                     break;
@@ -595,6 +601,7 @@ class WebQuotationController extends Controller
     public function rejectPayment(Request $request, Quotation $quotation, Payment $payment)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load(['client.clientUser', 'currency']);
         if ($payment->quotation_id !== $quotation->id) abort(404);
 
         $request->validate(['rejection_reason' => 'nullable|string|max:500']);
@@ -603,7 +610,9 @@ class WebQuotationController extends Controller
             'status'      => 'rejected',
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
-            'notes'       => $request->rejection_reason ? ($payment->notes . "\n\nRejection reason: " . $request->rejection_reason) : $payment->notes,
+            'notes'       => $request->rejection_reason
+                ? (($payment->notes ?? '') . "\n\nRejection reason: " . $request->rejection_reason)
+                : $payment->notes,
         ]);
 
         $clientEmail = $quotation->client->clientUser?->email ?? $quotation->client->email;
@@ -640,6 +649,7 @@ class WebQuotationController extends Controller
     public function bulkApprovePayments(Request $request, Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load(['client.clientUser', 'currency', 'items.payments']);
 
         $request->validate(['payment_ids' => 'required|array|min:1']);
 
@@ -702,6 +712,7 @@ class WebQuotationController extends Controller
     public function bulkRejectPayments(Request $request, Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load(['client.clientUser', 'currency']);
 
         $request->validate([
             'payment_ids'       => 'required|array|min:1',
@@ -802,7 +813,7 @@ class WebQuotationController extends Controller
         }
 
         $deleted = $quotationsToDelete->count();
-        $quotationsToDelete->delete();
+        $quotationsToDelete->each->delete();
 
         return redirect('/quotations')->with('success', $deleted . ' quotation(s) deleted.');
     }
@@ -872,6 +883,7 @@ class WebQuotationController extends Controller
     public function sendReminder(Quotation $quotation)
     {
         $this->authorizeOwnership($quotation);
+        $quotation->load('client');
 
         if ($quotation->payment_status === 'paid') {
             return back()->with('error', 'This quotation is already fully paid.');
@@ -911,8 +923,6 @@ class WebQuotationController extends Controller
 
     private function authorizeOwnership(Quotation $quotation): void
     {
-        if ($quotation->user_id !== request()->user()->id) {
-            abort(403, 'Unauthorized.');
-        }
+        $this->authorize('update', $quotation);
     }
 }

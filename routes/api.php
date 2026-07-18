@@ -8,20 +8,19 @@ use Illuminate\Support\Facades\Route;
 
 // ── Auth (Public, throttled) ──
 Route::middleware('throttle:api')->group(function () {
-    Route::post('/v1/register', [AuthController::class, 'register']);
-    Route::post('/v1/login', [AuthController::class, 'login']);
+    Route::post('/v1/register', [AuthController::class, 'apiRegister']);
+    Route::post('/v1/login', [AuthController::class, 'apiLogin']);
 });
 
 // ── Auth (Protected) ──
 Route::middleware(['auth:sanctum', 'throttle:api'])->prefix('v1')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'apiLogout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    // ── Quotation Store (Company only, NOT admin) ──
+    // ── Company only routes (NOT admin) ──
     Route::middleware('not.admin')->group(function () {
         Route::post('/quotations', [\App\Http\Controllers\QuotationController::class, 'store'])->name('quotations.store');
         Route::get('/taxes', [\App\Http\Controllers\Company\TaxController::class, 'index']);
-        Route::post('/taxes', [\App\Http\Controllers\Company\TaxController::class, 'store']);
     });
 
     // ── Admin: Company Management ──

@@ -53,12 +53,8 @@ class QuotationController extends Controller
         return DB::transaction(function () use ($validated) {
             $calc = QuotationCalculator::calculate($validated['items'], $validated['tax_percentage'], $validated['discount_amount']);
 
-            $quoteNumber = 'QT-' . now()->format('Ymd') . '-' . str_pad(
-                Quotation::whereDate('created_at', now()->toDateString())->count() + 1,
-                4,
-                '0',
-                STR_PAD_LEFT
-            );
+            $todayCount = Quotation::whereDate('created_at', now()->toDateString())->lockForUpdate()->count();
+            $quoteNumber = 'QT-' . now()->format('Ymd') . '-' . str_pad($todayCount + 1, 4, '0', STR_PAD_LEFT);
 
             $quotation = Quotation::create([
                 'user_id'           => auth()->id(),

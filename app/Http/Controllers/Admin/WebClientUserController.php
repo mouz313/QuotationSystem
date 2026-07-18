@@ -28,7 +28,7 @@ class WebClientUserController extends Controller
             });
         }
 
-        $clientUsers = $query->paginate(15)->withQueryString();
+        $clientUsers = $query->paginate(setting_int('pagination_per_page', 15))->withQueryString();
         $companies = Company::latest()->get();
 
         return view('admin.client-users.index', compact('clientUsers', 'companies'));

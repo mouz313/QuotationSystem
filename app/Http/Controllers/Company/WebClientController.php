@@ -25,7 +25,7 @@ class WebClientController extends Controller
             });
         }
 
-        $clients = $clients->latest()->paginate(15)->withQueryString();
+        $clients = $clients->latest()->paginate(setting_int('pagination_per_page', 15))->withQueryString();
 
         $pendingPaymentClientIds = Payment::where('payments.status', 'pending')
             ->join('quotations', 'payments.quotation_id', '=', 'quotations.id')
@@ -148,8 +148,6 @@ class WebClientController extends Controller
 
     private function authorizeOwnership(Client $client): void
     {
-        if ($client->user_id !== request()->user()->id) {
-            abort(403, 'Unauthorized.');
-        }
+        $this->authorize('update', $client);
     }
 }

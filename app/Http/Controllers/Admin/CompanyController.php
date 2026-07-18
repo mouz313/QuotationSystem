@@ -17,7 +17,7 @@ class CompanyController extends Controller
             ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%"))
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->latest()
-            ->paginate(15);
+            ->paginate(setting_int('pagination_per_page', 15));
 
         return response()->json([
             'status' => 'success',
@@ -27,7 +27,7 @@ class CompanyController extends Controller
 
     public function show(Company $company): JsonResponse
     {
-        $company->load(['users', 'activePackage.package', 'quotations' => fn ($q) => $q->latest()->limit(10)]);
+        $company->load(['users', 'activePackage.package', 'quotations' => fn ($q) => $q->latest()->limit(setting_int('dashboard_limit', 10))]);
 
         return response()->json([
             'status' => 'success',

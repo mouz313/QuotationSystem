@@ -17,15 +17,15 @@
                 <div style="display:flex;align-items:center;gap:.75rem;">
                     <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;">
                         <input type="checkbox" name="is_published" value="1" {{ old('is_published', $page->is_published) ? 'checked' : '' }} style="position:absolute;opacity:0;width:0;height:0;">
-                        <div style="width:2.75rem;height:1.5rem;background:var(--surface-200);border-radius:999px;transition:background .2s;"></div>
+                        <div style="width:2.75rem;height:1.5rem;background:var(--gray-200);border-radius:999px;transition:background .2s;"></div>
                     </label>
-                    <span style="font-size:.8125rem;color:var(--surface-700);">Published</span>
+                    <span style="font-size:.8125rem;color:var(--gray-700);">Published</span>
                 </div>
             </div>
         </div>
         <div style="display:flex;gap:.5rem;margin-top:1rem;">
             <button type="submit" class="btn btn-brand">Update Page</button>
-            <a href="/admin/pages" class="btn btn-ghost" style="border:1px solid var(--surface-200);">Cancel</a>
+            <a href="/admin/pages" class="btn btn-ghost" style="border:1px solid var(--gray-200);">Cancel</a>
         </div>
     </form>
 </div>
