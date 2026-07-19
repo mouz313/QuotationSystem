@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/app.css">
-    <script defer src="/js/app.js"></script>
+    <script defer src="/js/app.js?v=2"></script>
     <style>
         :root {
             --brand-50: oklch(0.97 0.02 280);

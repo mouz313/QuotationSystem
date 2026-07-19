@@ -1,9 +1,11 @@
-@props(['label', 'name', 'options' => [], 'value' => null, 'placeholder' => '', 'required' => false, 'error' => null])
+@props(['label' => null, 'name', 'options' => [], 'value' => null, 'placeholder' => '', 'required' => false, 'error' => null])
 
 <div>
+    @if($label)
     <label for="{{ $name }}" style="display:block;font-size:.8125rem;font-weight:600;color:var(--gray-700);margin-bottom:.375rem;">
         {{ $label }} @if($required)<span style="color:var(--red-500);">*</span>@endif
     </label>
+    @endif
     <select
         name="{{ $name }}"
         id="{{ $name }}"
